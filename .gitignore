@@ -1,0 +1,29 @@
+# Virtual environments
+.venv/
+venv/
+
+# Python cache
+__pycache__/
+*.pyc
+
+# Environment variables
+.env
+
+# Node (if you add frontend later)
+node_modules/
+
+# VS Code
+.vscode/
+
+# OS files
+.DS_Store
+
+# Build / distribution
+dist/
+build/
+
+# Database (optional if using SQLite later)
+*.db
+
+# Logs
+*.log
