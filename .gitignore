@@ -1,29 +1,90 @@
-# Virtual environments
+# =========================
+
+# Python virtual environments
+
+# =========================
+
 .venv/
 venv/
+env/
+backend/.venv/
 
-# Python cache
-__pycache__/
+# =========================
+
+# Python cache / compiled files
+
+# =========================
+
+**pycache**/
 *.pyc
+*.pyo
+*.pyd
+
+# =========================
 
 # Environment variables
+
+# =========================
+
 .env
+.env.*
 
-# Node (if you add frontend later)
-node_modules/
-
-# VS Code
-.vscode/
-
-# OS files
-.DS_Store
-
-# Build / distribution
-dist/
-build/
-
-# Database (optional if using SQLite later)
-*.db
+# =========================
 
 # Logs
+
+# =========================
+
 *.log
+
+# =========================
+
+# Build / distribution
+
+# =========================
+
+build/
+dist/
+*.egg-info/
+
+# =========================
+
+# Database (if using SQLite)
+
+# =========================
+
+*.db
+
+# =========================
+
+# VS Code / IDE
+
+# =========================
+
+.vscode/
+.idea/
+
+# =========================
+
+# OS files
+
+# =========================
+
+.DS_Store
+Thumbs.db
+
+# =========================
+
+# Node / frontend (future use)
+
+# =========================
+
+node_modules/
+
+# =========================
+
+# Misc
+
+# =========================
+
+*.sqlite3
