@@ -9,17 +9,7 @@ router = APIRouter()
 
 @router.post("/", response_model=JobResponse)
 def create_job(job: JobCreate, db: Session = Depends(get_db)):
-    new_job = Job(
-        company_name=job.company_name,
-        role=job.role,
-        job_link=job.job_link,
-        location=job.location,
-        source=job.source,
-        status=job.status,
-        applied_date=job.applied_date,
-        follow_up_date=job.follow_up_date,
-        notes=job.notes
-    )
+    new_job = Job(**job.model_dump())
 
     db.add(new_job)
     db.commit()
@@ -29,7 +19,7 @@ def create_job(job: JobCreate, db: Session = Depends(get_db)):
 
 @router.get("/", response_model=list[JobResponse])
 def get_jobs(db:Session = Depends(get_db)):
-    jobs = db.query(Job).all()
+    jobs = db.query(Job).order_by(Job.created_at.desc()).all()
     return jobs
 
 @router.put("/{job_id}", response_model=JobResponse)
@@ -39,15 +29,9 @@ def update_job(job_id: int, updated_job: JobUpdate, db: Session = Depends(get_db
     if not job:
         raise HTTPException(status_code=404, detail="Job not found")
     
-    job.company_name = updated_job.company_name
-    job.role = updated_job.role
-    job.job_link = updated_job.job_link
-    job.location = updated_job.location
-    job.source = updated_job.source
-    job.status = updated_job.status
-    job.applied_date = updated_job.applied_date
-    job.follow_up_date = updated_job.follow_up_date
-    job.notes = updated_job.notes
+    update_data = updated_job.model_dump()
+    for field, value in update_data.items():
+        setattr(job, field, value)
 
     db.commit()
     db.refresh(job)
