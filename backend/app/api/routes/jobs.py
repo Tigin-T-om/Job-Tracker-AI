@@ -14,7 +14,11 @@ def create_job(job: JobCreate, db: Session = Depends(get_db)):
         role=job.role,
         job_link=job.job_link,
         location=job.location,
-        status=job.status
+        source=job.source,
+        status=job.status,
+        applied_date=job.applied_date,
+        follow_up_date=job.follow_up_date,
+        notes=job.notes
     )
 
     db.add(new_job)
@@ -39,7 +43,11 @@ def update_job(job_id: int, updated_job: JobUpdate, db: Session = Depends(get_db
     job.role = updated_job.role
     job.job_link = updated_job.job_link
     job.location = updated_job.location
+    job.source = updated_job.source
     job.status = updated_job.status
+    job.applied_date = updated_job.applied_date
+    job.follow_up_date = updated_job.follow_up_date
+    job.notes = updated_job.notes
 
     db.commit()
     db.refresh(job)
