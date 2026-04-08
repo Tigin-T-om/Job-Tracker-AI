@@ -88,3 +88,11 @@ node_modules/
 # =========================
 
 *.sqlite3
+
+# =========================
+
+# Alembic cache only (NOT migrations)
+
+#==========================
+
+alembic/__pycache__/
