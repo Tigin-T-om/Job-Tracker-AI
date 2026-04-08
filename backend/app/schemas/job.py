@@ -50,4 +50,15 @@ class JobResponse(BaseModel):
     updated_at: datetime
 
     class Config:
-        from_attributes = None
+        from_attributes = True
+
+
+class JobStatusHistoryResponse(BaseModel):
+    id: int
+    job_id: int
+    old_status: str
+    new_status: str
+    changed_at: datetime
+
+    class Config:
+        from_attributes = True
