@@ -62,3 +62,24 @@ class JobStatusHistoryResponse(BaseModel):
 
     class Config:
         from_attributes = True
+
+
+class JobStatusCount(BaseModel):
+    status: str
+    count: int
+
+
+class JobDashboardSummary(BaseModel):
+    total_jobs: int
+    applied: int
+    no_response: int
+    callback_received: int
+    aptitude_test: int
+    technical_interview: int
+    hr_interview: int
+    final_interview: int
+    offer_received: int
+    rejected: int
+    overdue_follow_ups: int
+    today_follow_ups: int
+    upcoming_follow_ups: int
