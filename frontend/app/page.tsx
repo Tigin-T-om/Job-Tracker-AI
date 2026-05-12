@@ -1,65 +1,91 @@
-import Image from "next/image";
+import { API_BASE_URL } from "@/lib/api";
 
-export default function Home() {
+type Job = {
+  id: number;
+  company_name: string;
+  role: string;
+  job_link?: string | null;
+  location?: string | null;
+  source?: string | null;
+  status: string;
+  applied_date?: string | null;
+  follow_up_date?: string | null;
+  notes?: string | null;
+};
+
+async function getJobs(): Promise<Job[]> {
+  const res = await fetch(`${API_BASE_URL}/jobs/`, {
+    cache: "no-store",
+  });
+
+  if (!res.ok) {
+    throw new Error("Failed to fetch jobs");
+  }
+
+  return res.json();
+}
+
+export default async function Home() {
+  const jobs = await getJobs();
+
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
-        </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
-      </main>
-    </div>
+    <main className="min-h-screen bg-gray-100 p-8">
+      <div className="mx-auto max-w-6xl">
+        <h1 className="text-3xl font-bold text-gray-900">Job Tracker AI</h1>
+        <p className="mt-2 text-gray-600">
+          Track your job applications, follow-ups, and interview progress.
+        </p>
+
+        <section className="mt-8 rounded-xl bg-white p-6 shadow">
+          <h2 className="text-xl font-semibold text-gray-900">Applications</h2>
+
+          {jobs.length === 0 ? (
+            <p className="mt-4 text-gray-500">No jobs added yet.</p>
+          ) : (
+            <div className="mt-4 grid gap-4">
+              {jobs.map((job) => (
+                <div
+                  key={job.id}
+                  className="rounded-lg border border-gray-200 p-4"
+                >
+                  <div className="flex items-start justify-between gap-4">
+                    <div>
+                      <h3 className="text-lg font-semibold text-gray-900">
+                        {job.role}
+                      </h3>
+                      <p className="text-gray-600">{job.company_name}</p>
+                    </div>
+
+                    <span className="rounded-full bg-gray-100 px-3 py-1 text-sm text-gray-700">
+                      {job.status}
+                    </span>
+                  </div>
+
+                  <div className="mt-3 text-sm text-gray-600">
+                    {job.location && <p>Location: {job.location}</p>}
+                    {job.source && <p>Source: {job.source}</p>}
+                    {job.applied_date && <p>Applied: {job.applied_date}</p>}
+                    {job.follow_up_date && (
+                      <p>Follow up: {job.follow_up_date}</p>
+                    )}
+                    {job.notes && <p className="mt-2">Notes: {job.notes}</p>}
+                  </div>
+
+                  {job.job_link && (
+                    <a
+                      href={job.job_link}
+                      target="_blank"
+                      className="mt-3 inline-block text-sm font-medium text-blue-600 hover:underline"
+                    >
+                      View job
+                    </a>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+        </section>
+      </div>
+    </main>
   );
 }
