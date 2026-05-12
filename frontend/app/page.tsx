@@ -1,4 +1,5 @@
 import { API_BASE_URL } from "@/lib/api";
+import AddJobForm from "@/components/AddJobForm";
 
 type Job = {
   id: number;
@@ -35,6 +36,8 @@ export default async function Home() {
         <p className="mt-2 text-gray-600">
           Track your job applications, follow-ups, and interview progress.
         </p>
+
+        <AddJobForm />
 
         <section className="mt-8 rounded-xl bg-white p-6 shadow">
           <h2 className="text-xl font-semibold text-gray-900">Applications</h2>

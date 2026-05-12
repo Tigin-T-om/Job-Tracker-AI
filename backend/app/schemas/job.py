@@ -37,6 +37,7 @@ class JobUpdate(BaseModel):
     notes: Optional[str] = None
 
 class JobResponse(BaseModel):
+    id: int
     company_name: str
     role: str
     job_link: Optional[str] = None
