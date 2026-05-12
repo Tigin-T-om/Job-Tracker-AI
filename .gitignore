@@ -96,3 +96,10 @@ node_modules/
 #==========================
 
 alembic/__pycache__/
+
+
+# Next Js
+
+frontend/node_modules/
+node_modules/
+
