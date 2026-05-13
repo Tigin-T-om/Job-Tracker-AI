@@ -1,5 +1,9 @@
+"use client";
+
+import { useEffect, useState } from "react";
 import { API_BASE_URL } from "@/lib/api";
 import AddJobForm from "@/components/AddJobForm";
+import JobCard from "@/components/JobCard";
 
 type Job = {
   id: number;
@@ -14,25 +18,59 @@ type Job = {
   notes?: string | null;
 };
 
-async function getJobs(): Promise<Job[]> {
-  const res = await fetch(`${API_BASE_URL}/jobs/`, {
-    cache: "no-store",
-  });
+export default function Home() {
+  const [jobs, setJobs] = useState<Job[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
 
-  if (!res.ok) {
-    throw new Error("Failed to fetch jobs");
+  async function fetchJobs() {
+    try {
+      setLoading(true);
+
+      const res = await fetch(`${API_BASE_URL}/jobs/`);
+
+      if (!res.ok) {
+        throw new Error("Failed to fetch jobs");
+      }
+
+      const data = await res.json();
+      setJobs(data);
+    } catch {
+      setError("Failed to load jobs");
+    } finally {
+      setLoading(false);
+    }
   }
 
-  return res.json();
-}
+  async function handleDelete(jobId: number) {
+    const confirmed = confirm("Delete this job?");
 
-export default async function Home() {
-  const jobs = await getJobs();
+    if (!confirmed) return;
+
+    try {
+      const res = await fetch(`${API_BASE_URL}/jobs/${jobId}`, {
+        method: "DELETE",
+      });
+
+      if (!res.ok) {
+        throw new Error("Failed to delete job");
+      }
+
+      setJobs((prevJobs) => prevJobs.filter((job) => job.id !== jobId));
+    } catch {
+      alert("Failed to delete job");
+    }
+  }
+
+  useEffect(() => {
+    fetchJobs();
+  }, []);
 
   return (
-    <main className="min-h-screen bg-gray-100 p-8">
+    <main className="min-h-screen bg-gray-100 px-6 py-8">
       <div className="mx-auto max-w-6xl">
         <h1 className="text-3xl font-bold text-gray-900">Job Tracker AI</h1>
+
         <p className="mt-2 text-gray-600">
           Track your job applications, follow-ups, and interview progress.
         </p>
@@ -40,50 +78,31 @@ export default async function Home() {
         <AddJobForm />
 
         <section className="mt-8 rounded-xl bg-white p-6 shadow">
-          <h2 className="text-xl font-semibold text-gray-900">Applications</h2>
+          <div className="flex items-center justify-between">
+            <h2 className="text-xl font-semibold text-gray-900">
+              Applications
+            </h2>
 
-          {jobs.length === 0 ? (
+            <span className="rounded-full bg-gray-100 px-3 py-1 text-sm text-gray-600">
+              {jobs.length} total
+            </span>
+          </div>
+
+          {loading ? (
+            <p className="mt-4 text-gray-500">Loading jobs...</p>
+          ) : error ? (
+            <p className="mt-4 text-red-500">{error}</p>
+          ) : jobs.length === 0 ? (
             <p className="mt-4 text-gray-500">No jobs added yet.</p>
           ) : (
             <div className="mt-4 grid gap-4">
               {jobs.map((job) => (
-                <div
+                <JobCard
                   key={job.id}
-                  className="rounded-lg border border-gray-200 p-4"
-                >
-                  <div className="flex items-start justify-between gap-4">
-                    <div>
-                      <h3 className="text-lg font-semibold text-gray-900">
-                        {job.role}
-                      </h3>
-                      <p className="text-gray-600">{job.company_name}</p>
-                    </div>
-
-                    <span className="rounded-full bg-gray-100 px-3 py-1 text-sm text-gray-700">
-                      {job.status}
-                    </span>
-                  </div>
-
-                  <div className="mt-3 text-sm text-gray-600">
-                    {job.location && <p>Location: {job.location}</p>}
-                    {job.source && <p>Source: {job.source}</p>}
-                    {job.applied_date && <p>Applied: {job.applied_date}</p>}
-                    {job.follow_up_date && (
-                      <p>Follow up: {job.follow_up_date}</p>
-                    )}
-                    {job.notes && <p className="mt-2">Notes: {job.notes}</p>}
-                  </div>
-
-                  {job.job_link && (
-                    <a
-                      href={job.job_link}
-                      target="_blank"
-                      className="mt-3 inline-block text-sm font-medium text-blue-600 hover:underline"
-                    >
-                      View job
-                    </a>
-                  )}
-                </div>
+                  job={job}
+                  onDelete={handleDelete}
+                  onUpdated={fetchJobs}
+                />
               ))}
             </div>
           )}
