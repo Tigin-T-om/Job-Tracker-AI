@@ -5,7 +5,7 @@ import { API_BASE_URL } from "@/lib/api";
 import AddJobForm from "@/components/AddJobForm";
 import JobCard from "@/components/JobCard";
 import DashboardCards from "@/components/DashboardCards";
-import { finished } from "stream";
+import FollowUpSections from "@/components/FollowUpSections";
 
 type Job = {
   id: number;
@@ -48,6 +48,10 @@ export default function Home() {
   const [statusFilter, setStatusFilter] = useState("All");
   const [typeFilter, setTypeFilter] = useState("All");
 
+  const [overdueFollowUps, setOverdueFollowUps] = useState<Job[]>([]);
+  const [todayFollowUps, setTodayFollowUps] = useState<Job[]>([]);
+  const [upcomingFollowUps, setUpcomingFollowUps] = useState<Job[]>([]);
+
   async function fetchJobs() {
     try {
       setLoading(true);
@@ -82,9 +86,34 @@ export default function Home() {
     }
   }
 
+  async function fetchFollowUps() {
+    try {
+      const [overdueRes, todayRes, upcomingRes] = await Promise.all([
+        fetch(`${API_BASE_URL}/jobs/follow-ups/overdue`),
+        fetch(`${API_BASE_URL}/jobs/follow-ups/today`),
+        fetch(`${API_BASE_URL}/jobs/follow-ups/upcoming`),
+      ]);
+
+      if (!overdueRes.ok || !todayRes.ok || !upcomingRes.ok) {
+        throw new Error("Failed to fetch follow-ups");
+      }
+
+      const overdueData = await overdueRes.json();
+      const todayData = await todayRes.json();
+      const upcomingData = await upcomingRes.json();
+
+      setOverdueFollowUps(overdueData);
+      setTodayFollowUps(todayData);
+      setUpcomingFollowUps(upcomingData);
+    } catch (err) {
+      console.error(err);
+    }
+  }
+
   async function refreshData() {
     await fetchJobs();
     await fetchSummary();
+    await fetchFollowUps();
   }
 
   async function handleDelete(jobId: number) {
@@ -101,8 +130,7 @@ export default function Home() {
         throw new Error("Failed to delete job");
       }
 
-      setJobs((prevJobs) => prevJobs.filter((job) => job.id !== jobId));
-      fetchSummary();
+      await refreshData();
     } catch {
       alert("Failed to delete job");
     }
@@ -119,7 +147,7 @@ export default function Home() {
     "Aptitude Test",
     "Technical Interview",
     "HR Interview",
-    "Final Interview"
+    "Final Interview",
   ];
 
   const finishedStatuses = ["Offer Received", "Rejected"];
@@ -129,9 +157,9 @@ export default function Home() {
       job.company_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       job.role.toLowerCase().includes(searchTerm.toLowerCase());
 
-    const matchesStatus = 
+    const matchesStatus =
       statusFilter === "All" || job.status === statusFilter;
-    
+
     const matchesType =
       typeFilter === "All" ||
       (typeFilter === "Active" && activeStatuses.includes(job.status)) ||
@@ -153,6 +181,12 @@ export default function Home() {
 
         {summary && <DashboardCards summary={summary} />}
 
+        <FollowUpSections
+          overdue={overdueFollowUps}
+          today={todayFollowUps}
+          upcoming={upcomingFollowUps}
+        />
+
         <section className="mt-8 rounded-xl bg-white p-6 shadow">
           <div className="flex items-center justify-between">
             <h2 className="text-xl font-semibold text-gray-900">
@@ -160,44 +194,44 @@ export default function Home() {
             </h2>
 
             <span className="rounded-full bg-gray-100 px-3 py-1 text-sm text-gray-600">
-              {jobs.length} total
+              {filteredJobs.length} shown / {jobs.length} total
             </span>
           </div>
 
           <div className="mt-4 grid gap-3 md:grid-cols-3">
-            <input 
+            <input
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               placeholder="Search company or role..."
               className="rounded border p-3 text-gray-900"
-              />
+            />
 
-              <select 
-                value={statusFilter}
-                onChange={(e) => setStatusFilter(e.target.value)}
-                className="rounded border p-3 text-gray-900"
-              >
-                <option>All</option>
-                <option>Applied</option>
-                <option>No Response</option>
-                <option>Callback Received</option>
-                <option>Aptitude Test</option>
-                <option>Techinical Interview</option>
-                <option>Hr Interview</option>
-                <option>Final Interview</option>
-                <option>Offer Received</option>
-                <option>Rejected</option>
-              </select>
+            <select
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value)}
+              className="rounded border p-3 text-gray-900"
+            >
+              <option>All</option>
+              <option>Applied</option>
+              <option>No Response</option>
+              <option>Callback Received</option>
+              <option>Aptitude Test</option>
+              <option>Technical Interview</option>
+              <option>HR Interview</option>
+              <option>Final Interview</option>
+              <option>Offer Received</option>
+              <option>Rejected</option>
+            </select>
 
-              <select 
-                value={typeFilter}
-                onChange={(e) => setTypeFilter(e.target.value)}
-                className="rounded border p-3 text-gray-900"
-              >
-                <option>All</option>
-                <option>Active</option>
-                <option>Finished</option>
-              </select>
+            <select
+              value={typeFilter}
+              onChange={(e) => setTypeFilter(e.target.value)}
+              className="rounded border p-3 text-gray-900"
+            >
+              <option>All</option>
+              <option>Active</option>
+              <option>Finished</option>
+            </select>
           </div>
 
           {loading ? (
@@ -205,7 +239,7 @@ export default function Home() {
           ) : error ? (
             <p className="mt-4 text-red-500">{error}</p>
           ) : filteredJobs.length === 0 ? (
-            <p className="mt-4 text-gray-500">No jobs added yet.</p>
+            <p className="mt-4 text-gray-500">No matching jobs found.</p>
           ) : (
             <div className="mt-4 grid gap-4">
               {filteredJobs.map((job) => (

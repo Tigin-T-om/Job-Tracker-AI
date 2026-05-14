@@ -94,9 +94,7 @@ export default function AddJobForm() {
       onSubmit={handleSubmit}
       className="mt-6 rounded-xl bg-white p-6 shadow"
     >
-      <h2 className="text-xl font-semibold text-gray-900">
-        Add New Job
-      </h2>
+      <h2 className="text-xl font-semibold text-gray-900">Add New Job</h2>
 
       <div className="mt-4 grid gap-4 md:grid-cols-2">
         <input
@@ -158,21 +156,33 @@ export default function AddJobForm() {
           <option>Rejected</option>
         </select>
 
-        <input
-          type="date"
-          name="applied_date"
-          value={formData.applied_date}
-          onChange={handleChange}
-          className="rounded border p-3 text-gray-900"
-        />
+        <div>
+          <label className="mb-1 block text-sm font-medium text-gray-700">
+            Applied Date
+          </label>
 
-        <input
-          type="date"
-          name="follow_up_date"
-          value={formData.follow_up_date}
-          onChange={handleChange}
-          className="rounded border p-3 text-gray-900"
-        />
+          <input
+            type="date"
+            name="applied_date"
+            value={formData.applied_date}
+            onChange={handleChange}
+            className="w-full rounded border p-3 text-gray-900"
+          />
+        </div>
+
+        <div>
+          <label className="mb-1 block text-sm font-medium text-gray-700">
+            Follow-up Date
+          </label>
+
+          <input
+            type="date"
+            name="follow_up_date"
+            value={formData.follow_up_date}
+            onChange={handleChange}
+            className="w-full rounded border p-3 text-gray-900"
+          />
+        </div>
       </div>
 
       <textarea
@@ -191,9 +201,7 @@ export default function AddJobForm() {
         <input
           type="file"
           accept=".pdf,.doc,.docx"
-          onChange={(e) =>
-            setResumeFile(e.target.files?.[0] || null)
-          }
+          onChange={(e) => setResumeFile(e.target.files?.[0] || null)}
           className="mt-2 block w-full rounded border p-3 text-gray-900"
         />
 
