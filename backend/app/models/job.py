@@ -17,3 +17,5 @@ class Job(Base):
     notes = Column(String, nullable=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+    resume_filename = Column(String, nullable=True)
+    resume_filename = Column(String, nullable=True)

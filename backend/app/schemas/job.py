@@ -49,6 +49,9 @@ class JobResponse(BaseModel):
     notes: Optional[str] = None 
     created_at: datetime
     updated_at: datetime
+    resume_filename: Optional[str] = None
+    resume_file_path: Optional[str] = None
+
 
     class Config:
         from_attributes = True

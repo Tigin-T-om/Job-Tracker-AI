@@ -103,3 +103,7 @@ alembic/__pycache__/
 frontend/node_modules/
 node_modules/
 
+# Resume folder 
+
+backend/uploads/
+

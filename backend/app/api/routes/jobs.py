@@ -1,5 +1,10 @@
+import os
+import shutil
+
 from datetime import date, timedelta
 from fastapi import APIRouter, Depends, HTTPException
+from fastapi import UploadFile, File
+from fastapi.responses import FileResponse
 from sqlalchemy.orm import Session
 
 from app.constants.job_status import ACTIVE_JOB_STATUSES
@@ -173,6 +178,56 @@ def get_interview_stage_jobs(db: Session = Depends(get_db)):
 
     return jobs
 
+@router.post("/{job_id}/resume", response_model=JobResponse)
+def upload_resume(
+    job_id: int,
+    resume: UploadFile = File(...),
+    db: Session = Depends(get_db)
+):
+    job = db.query(Job).filter(Job.id == job_id).first()
+
+    if not job:
+        raise HTTPException(status_code=404, detail="Job not found")
+    
+    upload_dir = "uploads/resumes"
+    os.makedirs(upload_dir, exist_ok=True)
+
+    file_extension = os.path.splitext(resume.filename)[1]
+    saved_filename = f"job_{job_id}_resume{file_extension}"
+    file_path = os.path.join(upload_dir, saved_filename)
+
+    with open(file_path, "wb") as buffer:
+        shutil.copyfileobj(resume.file, buffer)
+
+    job.resume_filename = resume.filename
+    job.resume_file_path = file_path
+
+    db.commit()
+    db.refresh(job)
+
+    return job
+
+@router.get("/{job_id}/resume/download")
+def download_resume(job_id: int, db:Session = Depends(get_db)):
+    job = db.query(Job).filter(Job.id == job_id).first()
+
+    if not job or not job.resume_file_path:
+        raise HTTPException(status_code=404, detail="Resume not found")
+    
+    return FileResponse(
+        path=job.resume_file_path,
+        filename=job.resume_filename,
+        media_type="application/octet-stream",
+    )
+
+@router.get("/{job_id}/resume/view")
+def view_resume(job_id: int, db:Session = Depends(get_db)):
+    job = db.query(Job).filter(Job.id == job_id).first()
+
+    if not job or not job.resume_file_path:
+        raise HTTPException(status_code=404, detail="Resume not found")
+    
+    return FileResponse(path=job.resume_file_path)
 
 @router.get("/{job_id}", response_model=JobResponse)
 def get_job(job_id: int, db: Session = Depends(get_db)):
