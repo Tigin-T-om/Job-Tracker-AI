@@ -18,6 +18,14 @@ type Job = {
   resume_file_path?: string | null;
 };
 
+type StatusHistory = {
+  id: number;
+  job_id: number;
+  old_status: string;
+  new_status: string;
+  changed_at: string;
+};
+
 function getStatusClass(status: string) {
   switch (status) {
     case "Applied":
@@ -53,6 +61,10 @@ export default function JobCard({
   onUpdated: () => void;
 }) {
   const [isEditing, setIsEditing] = useState(false);
+
+  const [showHistory, setShowHistory] = useState(false);
+  const [history, setHistory] = useState<StatusHistory[]>([]);
+  const [historyLoading, setHistoryLoading] = useState(false);
 
   const [formData, setFormData] = useState({
     company_name: job.company_name,
@@ -208,6 +220,32 @@ export default function JobCard({
     );
   }
 
+  async function handleToggleHistory() {
+    if (showHistory) {
+      setShowHistory(false);
+      return;
+    }
+
+    try{
+      setHistoryLoading(true);
+
+      const res = await fetch(`${API_BASE_URL}/jobs/${job.id}/history`);
+
+      if (!res.ok) {
+        throw new Error("Failed to fetch history");
+      }
+
+      const data = await res.json();
+
+      setHistory(data);
+      setShowHistory(true);
+    } catch {
+      alert("Failed to load status history");
+    } finally {
+      setHistoryLoading(false);
+    }
+  }
+
   return (
     <div className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm transition hover:shadow-md">
       <div className="flex items-start justify-between gap-4">
@@ -292,6 +330,13 @@ export default function JobCard({
         )}
 
         <button
+          onClick={handleToggleHistory}
+          className="text-sm font-medium text-purple-600 hover:underline"
+        >
+          {showHistory ? "Hide History" : "View History"}
+        </button>
+
+        <button
           onClick={() => setIsEditing(true)}
           className="text-sm font-medium text-gray-700 hover:underline"
         >
@@ -305,6 +350,41 @@ export default function JobCard({
           Delete
         </button>
       </div>
+
+      {showHistory && (
+        <div className="mt-4 rounded-lg bg-gray-50 p-4">
+          <h4 className="text-sm font-semibold text-gray-900">
+            Status History
+          </h4>
+
+          {historyLoading ?(
+            <p className="mt-2 text-sm text-gray-500">Loading history...
+            </p>
+          ) : history.length === 0 ? (
+            <p className="mt-2 text-sm text-gray-500">
+              No status change yet.
+            </p>
+          ) : (
+            <div className="mt-3 grid gap-3">
+              {history.map((item) => (
+                <div
+                  key={item.id}
+                  className="rounded border-gray-200 bg-white p-3 text-sm"
+                >
+                  <p className="font-medium text-gray-900">
+                    {item.old_status} {"->"} {item.new_status}
+                  </p>
+
+                  <p className="mt-1 text-gray-500">
+                    Changed at: {new Date(item.changed_at).toLocaleDateString()}
+                  </p>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
     </div>
   );
 }
