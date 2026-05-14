@@ -4,6 +4,8 @@ import { useState } from "react";
 import { API_BASE_URL } from "@/lib/api";
 
 export default function AddJobForm() {
+  const [resumeFile, setResumeFile] = useState<File | null>(null);
+
   const [formData, setFormData] = useState({
     company_name: "",
     role: "",
@@ -36,6 +38,27 @@ export default function AddJobForm() {
       return;
     }
 
+    const createdJob = await res.json();
+
+    if (resumeFile) {
+      const resumeData = new FormData();
+
+      resumeData.append("resume", resumeFile);
+
+      const resumeRes = await fetch(
+        `${API_BASE_URL}/jobs/${createdJob.id}/resume`,
+        {
+          method: "POST",
+          body: resumeData,
+        },
+      );
+
+      if (!resumeRes.ok) {
+        alert("Job created, but resume upload failed");
+        return;
+      }
+    }
+
     alert("Job added successfully");
 
     setFormData({
@@ -50,11 +73,15 @@ export default function AddJobForm() {
       notes: "",
     });
 
+    setResumeFile(null);
+
     window.location.reload();
   }
 
   function handleChange(
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
+    e: React.ChangeEvent<
+      HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
+    >,
   ) {
     setFormData({
       ...formData,
@@ -63,17 +90,63 @@ export default function AddJobForm() {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="mt-6 rounded-xl bg-white p-6 shadow">
-      <h2 className="text-xl font-semibold text-gray-900">Add New Job</h2>
+    <form
+      onSubmit={handleSubmit}
+      className="mt-6 rounded-xl bg-white p-6 shadow"
+    >
+      <h2 className="text-xl font-semibold text-gray-900">
+        Add New Job
+      </h2>
 
       <div className="mt-4 grid gap-4 md:grid-cols-2">
-        <input name="company_name" value={formData.company_name} onChange={handleChange} required placeholder="Company name" className="rounded border p-3 text-gray-900" />
-        <input name="role" value={formData.role} onChange={handleChange} required placeholder="Role" className="rounded border p-3 text-gray-900" />
-        <input name="job_link" value={formData.job_link} onChange={handleChange} placeholder="Job link" className="rounded border p-3 text-gray-900" />
-        <input name="location" value={formData.location} onChange={handleChange} placeholder="Location" className="rounded border p-3 text-gray-900" />
-        <input name="source" value={formData.source} onChange={handleChange} placeholder="Source e.g. LinkedIn" className="rounded border p-3 text-gray-900" />
+        <input
+          name="company_name"
+          value={formData.company_name}
+          onChange={handleChange}
+          required
+          placeholder="Company name"
+          className="rounded border p-3 text-gray-900"
+        />
 
-        <select name="status" value={formData.status} onChange={handleChange} className="rounded border p-3 text-gray-900">
+        <input
+          name="role"
+          value={formData.role}
+          onChange={handleChange}
+          required
+          placeholder="Role"
+          className="rounded border p-3 text-gray-900"
+        />
+
+        <input
+          name="job_link"
+          value={formData.job_link}
+          onChange={handleChange}
+          placeholder="Job link"
+          className="rounded border p-3 text-gray-900"
+        />
+
+        <input
+          name="location"
+          value={formData.location}
+          onChange={handleChange}
+          placeholder="Location"
+          className="rounded border p-3 text-gray-900"
+        />
+
+        <input
+          name="source"
+          value={formData.source}
+          onChange={handleChange}
+          placeholder="Source e.g. LinkedIn"
+          className="rounded border p-3 text-gray-900"
+        />
+
+        <select
+          name="status"
+          value={formData.status}
+          onChange={handleChange}
+          className="rounded border p-3 text-gray-900"
+        >
           <option>Applied</option>
           <option>No Response</option>
           <option>Callback Received</option>
@@ -85,13 +158,56 @@ export default function AddJobForm() {
           <option>Rejected</option>
         </select>
 
-        <input type="date" name="applied_date" value={formData.applied_date} onChange={handleChange} className="rounded border p-3 text-gray-900" />
-        <input type="date" name="follow_up_date" value={formData.follow_up_date} onChange={handleChange} className="rounded border p-3 text-gray-900" />
+        <input
+          type="date"
+          name="applied_date"
+          value={formData.applied_date}
+          onChange={handleChange}
+          className="rounded border p-3 text-gray-900"
+        />
+
+        <input
+          type="date"
+          name="follow_up_date"
+          value={formData.follow_up_date}
+          onChange={handleChange}
+          className="rounded border p-3 text-gray-900"
+        />
       </div>
 
-      <textarea name="notes" value={formData.notes} onChange={handleChange} placeholder="Notes" className="mt-4 w-full rounded border p-3 text-gray-900" />
+      <textarea
+        name="notes"
+        value={formData.notes}
+        onChange={handleChange}
+        placeholder="Notes"
+        className="mt-4 w-full rounded border p-3 text-gray-900"
+      />
 
-      <button type="submit" className="mt-4 rounded bg-black px-5 py-3 text-white">
+      <div className="mt-4">
+        <label className="block text-sm font-medium text-gray-700">
+          Upload Resume Optional
+        </label>
+
+        <input
+          type="file"
+          accept=".pdf,.doc,.docx"
+          onChange={(e) =>
+            setResumeFile(e.target.files?.[0] || null)
+          }
+          className="mt-2 block w-full rounded border p-3 text-gray-900"
+        />
+
+        {resumeFile && (
+          <p className="mt-2 text-sm text-gray-600">
+            Selected: {resumeFile.name}
+          </p>
+        )}
+      </div>
+
+      <button
+        type="submit"
+        className="mt-4 rounded bg-black px-5 py-3 text-white"
+      >
         Add Job
       </button>
     </form>

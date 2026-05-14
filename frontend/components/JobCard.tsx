@@ -14,6 +14,8 @@ type Job = {
   applied_date?: string | null;
   follow_up_date?: string | null;
   notes?: string | null;
+  resume_filename?: string | null;
+  resume_file_path?: string | null;
 };
 
 function getStatusClass(status: string) {
@@ -51,6 +53,7 @@ export default function JobCard({
   onUpdated: () => void;
 }) {
   const [isEditing, setIsEditing] = useState(false);
+
   const [formData, setFormData] = useState({
     company_name: job.company_name,
     role: job.role,
@@ -64,7 +67,9 @@ export default function JobCard({
   });
 
   function handleChange(
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
+    e: React.ChangeEvent<
+      HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
+    >,
   ) {
     setFormData({
       ...formData,
@@ -184,7 +189,10 @@ export default function JobCard({
         />
 
         <div className="mt-4 flex gap-3">
-          <button type="submit" className="rounded bg-black px-4 py-2 text-white">
+          <button
+            type="submit"
+            className="rounded bg-black px-4 py-2 text-white"
+          >
             Save
           </button>
 
@@ -210,7 +218,7 @@ export default function JobCard({
 
         <span
           className={`rounded-full px-3 py-1 text-xs font-medium ${getStatusClass(
-            job.status
+            job.status,
           )}`}
         >
           {job.status}
@@ -218,10 +226,29 @@ export default function JobCard({
       </div>
 
       <div className="mt-4 grid gap-2 text-sm text-gray-600 md:grid-cols-2">
-        {job.location && <p><span className="font-medium">Location:</span> {job.location}</p>}
-        {job.source && <p><span className="font-medium">Source:</span> {job.source}</p>}
-        {job.applied_date && <p><span className="font-medium">Applied:</span> {job.applied_date}</p>}
-        {job.follow_up_date && <p><span className="font-medium">Follow up:</span> {job.follow_up_date}</p>}
+        {job.location && (
+          <p>
+            <span className="font-medium">Location:</span> {job.location}
+          </p>
+        )}
+
+        {job.source && (
+          <p>
+            <span className="font-medium">Source:</span> {job.source}
+          </p>
+        )}
+
+        {job.applied_date && (
+          <p>
+            <span className="font-medium">Applied:</span> {job.applied_date}
+          </p>
+        )}
+
+        {job.follow_up_date && (
+          <p>
+            <span className="font-medium">Follow up:</span> {job.follow_up_date}
+          </p>
+        )}
       </div>
 
       {job.notes && (
@@ -230,7 +257,7 @@ export default function JobCard({
         </p>
       )}
 
-      <div className="mt-4 flex gap-3">
+      <div className="mt-4 flex flex-wrap gap-3">
         {job.job_link && (
           <a
             href={job.job_link}
@@ -240,6 +267,28 @@ export default function JobCard({
           >
             View job
           </a>
+        )}
+
+        {job.resume_filename ? (
+          <>
+            <a
+              href={`${API_BASE_URL}/jobs/${job.id}/resume/view`}
+              target="_blank"
+              rel="noreferrer"
+              className="text-sm font-medium text-green-600 hover:underline"
+            >
+              View Resume
+            </a>
+
+            <a
+              href={`${API_BASE_URL}/jobs/${job.id}/resume/download`}
+              className="text-sm font-medium text-indigo-600 hover:underline"
+            >
+              Download Resume
+            </a>
+          </>
+        ) : (
+          <span className="text-sm text-gray-400">No resume</span>
         )}
 
         <button

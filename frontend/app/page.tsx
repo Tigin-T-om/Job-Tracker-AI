@@ -5,6 +5,7 @@ import { API_BASE_URL } from "@/lib/api";
 import AddJobForm from "@/components/AddJobForm";
 import JobCard from "@/components/JobCard";
 import DashboardCards from "@/components/DashboardCards";
+import { finished } from "stream";
 
 type Job = {
   id: number;
@@ -17,6 +18,8 @@ type Job = {
   applied_date?: string | null;
   follow_up_date?: string | null;
   notes?: string | null;
+  resume_filename?: string | null;
+  resume_file_path?: string | null;
 };
 
 type DashboardSummary = {
@@ -40,6 +43,10 @@ export default function Home() {
   const [summary, setSummary] = useState<DashboardSummary | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+
+  const [searchTerm, setSearchTerm] = useState("");
+  const [statusFilter, setStatusFilter] = useState("All");
+  const [typeFilter, setTypeFilter] = useState("All");
 
   async function fetchJobs() {
     try {
@@ -105,6 +112,34 @@ export default function Home() {
     refreshData();
   }, []);
 
+  const activeStatuses = [
+    "Applied",
+    "No Response",
+    "Callback Received",
+    "Aptitude Test",
+    "Technical Interview",
+    "HR Interview",
+    "Final Interview"
+  ];
+
+  const finishedStatuses = ["Offer Received", "Rejected"];
+
+  const filteredJobs = jobs.filter((job) => {
+    const matchesSearch =
+      job.company_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      job.role.toLowerCase().includes(searchTerm.toLowerCase());
+
+    const matchesStatus = 
+      statusFilter === "All" || job.status === statusFilter;
+    
+    const matchesType =
+      typeFilter === "All" ||
+      (typeFilter === "Active" && activeStatuses.includes(job.status)) ||
+      (typeFilter === "Finished" && finishedStatuses.includes(job.status));
+
+    return matchesSearch && matchesStatus && matchesType;
+  });
+
   return (
     <main className="min-h-screen bg-gray-100 px-6 py-8">
       <div className="mx-auto max-w-6xl">
@@ -129,15 +164,51 @@ export default function Home() {
             </span>
           </div>
 
+          <div className="mt-4 grid gap-3 md:grid-cols-3">
+            <input 
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              placeholder="Search company or role..."
+              className="rounded border p-3 text-gray-900"
+              />
+
+              <select 
+                value={statusFilter}
+                onChange={(e) => setStatusFilter(e.target.value)}
+                className="rounded border p-3 text-gray-900"
+              >
+                <option>All</option>
+                <option>Applied</option>
+                <option>No Response</option>
+                <option>Callback Received</option>
+                <option>Aptitude Test</option>
+                <option>Techinical Interview</option>
+                <option>Hr Interview</option>
+                <option>Final Interview</option>
+                <option>Offer Received</option>
+                <option>Rejected</option>
+              </select>
+
+              <select 
+                value={typeFilter}
+                onChange={(e) => setTypeFilter(e.target.value)}
+                className="rounded border p-3 text-gray-900"
+              >
+                <option>All</option>
+                <option>Active</option>
+                <option>Finished</option>
+              </select>
+          </div>
+
           {loading ? (
             <p className="mt-4 text-gray-500">Loading jobs...</p>
           ) : error ? (
             <p className="mt-4 text-red-500">{error}</p>
-          ) : jobs.length === 0 ? (
+          ) : filteredJobs.length === 0 ? (
             <p className="mt-4 text-gray-500">No jobs added yet.</p>
           ) : (
             <div className="mt-4 grid gap-4">
-              {jobs.map((job) => (
+              {filteredJobs.map((job) => (
                 <JobCard
                   key={job.id}
                   job={job}
