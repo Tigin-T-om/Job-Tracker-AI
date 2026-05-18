@@ -1,5 +1,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from app.api.routes.auth import router as auth_router
 from app.api.routes.jobs import router as jobs_router
 from app.core.config import settings
 
@@ -25,3 +26,5 @@ def health_check():
 
 
 app.include_router(jobs_router, prefix="/jobs", tags=["Jobs"])
+
+app.include_router(auth_router, prefix="/auth", tags=["Auth"])

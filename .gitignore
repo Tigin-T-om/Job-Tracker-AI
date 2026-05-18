@@ -25,7 +25,7 @@ backend/.venv/
 # Environment variables
 
 # =========================
-
+backend/.env
 .env
 .env.*
 
