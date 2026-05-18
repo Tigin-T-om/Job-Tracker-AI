@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Text, Date, DateTime
+from sqlalchemy import Column, Integer, String, Text, Date, DateTime, ForeignKey
 from sqlalchemy.sql import func
 from app.db.base import Base
 
@@ -6,6 +6,7 @@ class Job(Base):
     __tablename__="jobs"
 
     id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=True) 
     company_name = Column(String, index=True, nullable=False)
     role = Column(String, nullable=False)
     job_link = Column(String, nullable=True)
