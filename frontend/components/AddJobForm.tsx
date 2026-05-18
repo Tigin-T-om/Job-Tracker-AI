@@ -216,7 +216,7 @@ export default function AddJobForm() {
         type="submit"
         className="mt-4 rounded bg-black px-5 py-3 text-white"
       >
-        Add Job
+        Save Job Application
       </button>
     </form>
   );

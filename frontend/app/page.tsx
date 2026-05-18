@@ -239,7 +239,7 @@ export default function Home() {
           ) : error ? (
             <p className="mt-4 text-red-500">{error}</p>
           ) : filteredJobs.length === 0 ? (
-            <p className="mt-4 text-gray-500">No matching jobs found.</p>
+            <p className="mt-4 text-gray-500">No matching jobs found. Try changing your search or filters. </p>
           ) : (
             <div className="mt-4 grid gap-4">
               {filteredJobs.map((job) => (

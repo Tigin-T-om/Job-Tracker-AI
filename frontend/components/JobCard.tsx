@@ -226,7 +226,7 @@ export default function JobCard({
       return;
     }
 
-    try{
+    try {
       setHistoryLoading(true);
 
       const res = await fetch(`${API_BASE_URL}/jobs/${job.id}/history`);
@@ -295,7 +295,7 @@ export default function JobCard({
         </p>
       )}
 
-      <div className="mt-4 flex flex-wrap gap-3">
+      <div className="mt-4 flex flex-wrap items-center gap-3 border-t border-gray-100 pt-4">
         {job.job_link && (
           <a
             href={job.job_link}
@@ -357,13 +357,10 @@ export default function JobCard({
             Status History
           </h4>
 
-          {historyLoading ?(
-            <p className="mt-2 text-sm text-gray-500">Loading history...
-            </p>
+          {historyLoading ? (
+            <p className="mt-2 text-sm text-gray-500">Loading history...</p>
           ) : history.length === 0 ? (
-            <p className="mt-2 text-sm text-gray-500">
-              No status change yet.
-            </p>
+            <p className="mt-2 text-sm text-gray-500">No status change yet.</p>
           ) : (
             <div className="mt-3 grid gap-3">
               {history.map((item) => (
@@ -384,7 +381,6 @@ export default function JobCard({
           )}
         </div>
       )}
-
     </div>
   );
 }
