@@ -159,6 +159,63 @@ export default function JobCard({
     }
   }
 
+  async function handleViewResume() {
+    const token = getToken();
+
+    if (!token) {
+      alert("Please login first");
+      return;
+    }
+
+    const res = await fetch(`${API_BASE_URL}/jobs/${job.id}/resume/view`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+
+    if (!res.ok) {
+      alert("Failed to open resume");
+      return;
+    }
+
+    const blob = await res.blob();
+    const fileUrl = URL.createObjectURL(blob);
+
+    window.open(fileUrl, "_blank");
+  }
+
+  async function handleDownloadResume() {
+    const token = getToken();
+
+    if (!token) {
+      alert("Please login first");
+      return;
+    }
+
+    const res = await fetch(`${API_BASE_URL}/jobs/${job.id}/resume/download`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+
+    if (!res.ok) {
+      alert("Failed to download resume");
+      return;
+    }
+
+    const blob = await res.blob();
+    const fileUrl = URL.createObjectURL(blob);
+
+    const link = document.createElement("a");
+    link.href = fileUrl;
+    link.download = job.resume_filename || "resume";
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+
+    URL.revokeObjectURL(fileUrl);
+  }
+
   if (isEditing) {
     return (
       <form
@@ -329,21 +386,19 @@ export default function JobCard({
 
         {job.resume_filename ? (
           <>
-            <a
-              href={`${API_BASE_URL}/jobs/${job.id}/resume/view`}
-              target="_blank"
-              rel="noreferrer"
+            <button
+              onClick={handleViewResume}
               className="text-sm font-medium text-green-600 hover:underline"
             >
               View Resume
-            </a>
+            </button>
 
-            <a
-              href={`${API_BASE_URL}/jobs/${job.id}/resume/download`}
+            <button
+              onClick={handleDownloadResume}
               className="text-sm font-medium text-indigo-600 hover:underline"
             >
               Download Resume
-            </a>
+            </button>
           </>
         ) : (
           <span className="text-sm text-gray-400">No resume</span>

@@ -19,4 +19,4 @@ class Job(Base):
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
     resume_filename = Column(String, nullable=True)
-    resume_filename = Column(String, nullable=True)
+    resume_file_path = Column(String, nullable=True)

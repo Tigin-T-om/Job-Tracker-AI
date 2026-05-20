@@ -5,6 +5,8 @@ import { useRouter } from "next/navigation";
 import { API_BASE_URL } from "@/lib/api";
 import { saveToken } from "@/lib/auth";
 
+import Link from "next/link";
+
 export default function LoginPage() {
   const router = useRouter();
 
@@ -72,10 +74,19 @@ export default function LoginPage() {
           type="submit"
           className="mt-4 w-full rounded bg-black px-5 py-3 text-white"
         >
-            Login
+          Login
         </button>
+
+        <p className="mt-4 text-center text-sm text-gray-600">
+          Don&apos;t have an account?{" "}
+          <Link
+            href="/signup"
+            className="font-medium text-blue-600 hover:underline"
+          >
+            Create account
+          </Link>
+        </p>
       </form>
     </main>
   );
 }
- 

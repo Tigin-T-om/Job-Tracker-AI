@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 
 import { API_BASE_URL } from "@/lib/api";
 import { getToken } from "@/lib/auth";
+import { removeToken } from "@/lib/auth";
 
 import AddJobForm from "@/components/AddJobForm";
 import JobCard from "@/components/JobCard";
@@ -42,6 +43,14 @@ type DashboardSummary = {
   upcoming_follow_ups: number;
 };
 
+type User = {
+  id: number;
+  name: string;
+  email: string;
+  mobile_number?: string | null;
+  age?: number | null;
+};
+
 export default function Home() {
   const router = useRouter();
 
@@ -58,6 +67,8 @@ export default function Home() {
   const [todayFollowUps, setTodayFollowUps] = useState<Job[]>([]);
   const [upcomingFollowUps, setUpcomingFollowUps] = useState<Job[]>([]);
 
+  const [currentUser, setCurrentUser] = useState<User | null>(null);
+
   function getAuthHeaders() {
     const token = getToken();
 
@@ -69,6 +80,30 @@ export default function Home() {
     return {
       Authorization: `Bearer ${token}`,
     };
+  }
+
+  function handleLogout() {
+    removeToken();
+    router.push("/login");
+  }
+
+  async function fetchCurrentUser() {
+    try {
+      const headers = getAuthHeaders();
+      if (!headers) return;
+
+      const res = await fetch(`${API_BASE_URL}/auth/me`, {
+        headers,
+      });
+      if (!res.ok) {
+        throw new Error("Failed to fetch user");
+      }
+
+      const data = await res.json();
+      setCurrentUser(data);
+    } catch {
+      router.push("/login");
+    }
   }
 
   async function fetchJobs() {
@@ -143,6 +178,7 @@ export default function Home() {
   }
 
   async function refreshData() {
+    await fetchCurrentUser();
     await fetchJobs();
     await fetchSummary();
     await fetchFollowUps();
@@ -193,8 +229,7 @@ export default function Home() {
       job.company_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       job.role.toLowerCase().includes(searchTerm.toLowerCase());
 
-    const matchesStatus =
-      statusFilter === "All" || job.status === statusFilter;
+    const matchesStatus = statusFilter === "All" || job.status === statusFilter;
 
     const matchesType =
       typeFilter === "All" ||
@@ -207,12 +242,28 @@ export default function Home() {
   return (
     <main className="min-h-screen bg-gray-100 px-6 py-8">
       <div className="mx-auto max-w-6xl">
-        <h1 className="text-3xl font-bold text-gray-900">Job Tracker AI</h1>
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <h1 className="text-3xl font-bold text-gray-900">Job Tracker AI</h1>
 
-        <p className="mt-2 text-gray-600">
-          Track your job applications, follow-ups, and interview progress.
-        </p>
+            <p className="mt-2 text-gray-600">
+              Track your job applications, follow-ups, and interview progress.
+            </p>
 
+            {currentUser && (
+              <p className="mt-2 text-sm text-gray-500">
+                Logged in as {currentUser.name} ({currentUser.email})
+              </p>
+            )}
+          </div>
+
+          <button
+            onClick={handleLogout}
+            className="rounded bg-red-600 px-4 py-2 text-sm text-white"
+          >
+            Logout
+          </button>
+        </div>
         <AddJobForm />
 
         {summary && <DashboardCards summary={summary} />}

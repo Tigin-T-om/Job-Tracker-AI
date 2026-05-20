@@ -4,6 +4,8 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { API_BASE_URL } from "@/lib/api";
 
+import Link from "next/link";
+
 export default function SignupPage() {
   const router = useRouter();
 
@@ -51,9 +53,7 @@ export default function SignupPage() {
           type="text"
           placeholder="Full name"
           value={formData.name}
-          onChange={(e) =>
-            setFormData({ ...formData, name: e.target.value })
-          }
+          onChange={(e) => setFormData({ ...formData, name: e.target.value })}
           className="mt-4 w-full rounded border p-3 text-gray-900"
           required
         />
@@ -62,9 +62,7 @@ export default function SignupPage() {
           type="email"
           placeholder="Email"
           value={formData.email}
-          onChange={(e) =>
-            setFormData({ ...formData, email: e.target.value })
-          }
+          onChange={(e) => setFormData({ ...formData, email: e.target.value })}
           className="mt-4 w-full rounded border p-3 text-gray-900"
           required
         />
@@ -97,9 +95,7 @@ export default function SignupPage() {
           type="number"
           placeholder="Age"
           value={formData.age}
-          onChange={(e) =>
-            setFormData({ ...formData, age: e.target.value })
-          }
+          onChange={(e) => setFormData({ ...formData, age: e.target.value })}
           className="mt-4 w-full rounded border p-3 text-gray-900"
         />
 
@@ -109,6 +105,16 @@ export default function SignupPage() {
         >
           Create Account
         </button>
+
+        <p className="mt-4 text-center text-sm text-gray-600">
+          Already have an account?{" "}
+          <Link
+            href="/login"
+            className="font-medium text-blue-600 hover:underline"
+          >
+            Login
+          </Link>
+        </p>
       </form>
     </main>
   );
