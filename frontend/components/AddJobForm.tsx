@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { API_BASE_URL } from "@/lib/api";
+import { getToken } from "@/lib/auth";
 
 export default function AddJobForm() {
   const [resumeFile, setResumeFile] = useState<File | null>(null);
@@ -21,10 +22,18 @@ export default function AddJobForm() {
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
 
+    const token = getToken();
+
+    if (!token) {
+      alert("Please login first");
+      return;
+    }
+
     const res = await fetch(`${API_BASE_URL}/jobs/`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
       },
       body: JSON.stringify({
         ...formData,
@@ -49,6 +58,9 @@ export default function AddJobForm() {
         `${API_BASE_URL}/jobs/${createdJob.id}/resume`,
         {
           method: "POST",
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
           body: resumeData,
         },
       );

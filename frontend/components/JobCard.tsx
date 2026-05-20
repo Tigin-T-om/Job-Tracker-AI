@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { API_BASE_URL } from "@/lib/api";
+import { getToken } from "@/lib/auth";
 
 type Job = {
   id: number;
@@ -92,10 +93,18 @@ export default function JobCard({
   async function handleUpdate(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
 
+    const token = getToken();
+
+    if (!token) {
+      alert("Please login first");
+      return;
+    }
+
     const res = await fetch(`${API_BASE_URL}/jobs/${job.id}`, {
       method: "PUT",
       headers: {
         "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
       },
       body: JSON.stringify({
         ...formData,
@@ -111,6 +120,43 @@ export default function JobCard({
 
     setIsEditing(false);
     onUpdated();
+  }
+
+  async function handleToggleHistory() {
+    if (showHistory) {
+      setShowHistory(false);
+      return;
+    }
+
+    const token = getToken();
+
+    if (!token) {
+      alert("Please login first");
+      return;
+    }
+
+    try {
+      setHistoryLoading(true);
+
+      const res = await fetch(`${API_BASE_URL}/jobs/${job.id}/history`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (!res.ok) {
+        throw new Error("Failed to fetch history");
+      }
+
+      const data = await res.json();
+
+      setHistory(data);
+      setShowHistory(true);
+    } catch {
+      alert("Failed to load status history");
+    } finally {
+      setHistoryLoading(false);
+    }
   }
 
   if (isEditing) {
@@ -218,32 +264,6 @@ export default function JobCard({
         </div>
       </form>
     );
-  }
-
-  async function handleToggleHistory() {
-    if (showHistory) {
-      setShowHistory(false);
-      return;
-    }
-
-    try {
-      setHistoryLoading(true);
-
-      const res = await fetch(`${API_BASE_URL}/jobs/${job.id}/history`);
-
-      if (!res.ok) {
-        throw new Error("Failed to fetch history");
-      }
-
-      const data = await res.json();
-
-      setHistory(data);
-      setShowHistory(true);
-    } catch {
-      alert("Failed to load status history");
-    } finally {
-      setHistoryLoading(false);
-    }
   }
 
   return (
@@ -366,14 +386,14 @@ export default function JobCard({
               {history.map((item) => (
                 <div
                   key={item.id}
-                  className="rounded border-gray-200 bg-white p-3 text-sm"
+                  className="rounded border border-gray-200 bg-white p-3 text-sm"
                 >
                   <p className="font-medium text-gray-900">
                     {item.old_status} {"->"} {item.new_status}
                   </p>
 
                   <p className="mt-1 text-gray-500">
-                    Changed at: {new Date(item.changed_at).toLocaleDateString()}
+                    Changed at: {new Date(item.changed_at).toLocaleString()}
                   </p>
                 </div>
               ))}

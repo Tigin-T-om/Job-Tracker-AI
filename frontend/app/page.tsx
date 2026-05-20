@@ -1,7 +1,11 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+
 import { API_BASE_URL } from "@/lib/api";
+import { getToken } from "@/lib/auth";
+
 import AddJobForm from "@/components/AddJobForm";
 import JobCard from "@/components/JobCard";
 import DashboardCards from "@/components/DashboardCards";
@@ -39,6 +43,8 @@ type DashboardSummary = {
 };
 
 export default function Home() {
+  const router = useRouter();
+
   const [jobs, setJobs] = useState<Job[]>([]);
   const [summary, setSummary] = useState<DashboardSummary | null>(null);
   const [loading, setLoading] = useState(true);
@@ -52,11 +58,29 @@ export default function Home() {
   const [todayFollowUps, setTodayFollowUps] = useState<Job[]>([]);
   const [upcomingFollowUps, setUpcomingFollowUps] = useState<Job[]>([]);
 
+  function getAuthHeaders() {
+    const token = getToken();
+
+    if (!token) {
+      router.push("/login");
+      return null;
+    }
+
+    return {
+      Authorization: `Bearer ${token}`,
+    };
+  }
+
   async function fetchJobs() {
     try {
       setLoading(true);
 
-      const res = await fetch(`${API_BASE_URL}/jobs/`);
+      const headers = getAuthHeaders();
+      if (!headers) return;
+
+      const res = await fetch(`${API_BASE_URL}/jobs/`, {
+        headers,
+      });
 
       if (!res.ok) {
         throw new Error("Failed to fetch jobs");
@@ -73,7 +97,12 @@ export default function Home() {
 
   async function fetchSummary() {
     try {
-      const res = await fetch(`${API_BASE_URL}/jobs/dashboard/summary`);
+      const headers = getAuthHeaders();
+      if (!headers) return;
+
+      const res = await fetch(`${API_BASE_URL}/jobs/dashboard/summary`, {
+        headers,
+      });
 
       if (!res.ok) {
         throw new Error("Failed to fetch summary");
@@ -88,10 +117,13 @@ export default function Home() {
 
   async function fetchFollowUps() {
     try {
+      const headers = getAuthHeaders();
+      if (!headers) return;
+
       const [overdueRes, todayRes, upcomingRes] = await Promise.all([
-        fetch(`${API_BASE_URL}/jobs/follow-ups/overdue`),
-        fetch(`${API_BASE_URL}/jobs/follow-ups/today`),
-        fetch(`${API_BASE_URL}/jobs/follow-ups/upcoming`),
+        fetch(`${API_BASE_URL}/jobs/follow-ups/overdue`, { headers }),
+        fetch(`${API_BASE_URL}/jobs/follow-ups/today`, { headers }),
+        fetch(`${API_BASE_URL}/jobs/follow-ups/upcoming`, { headers }),
       ]);
 
       if (!overdueRes.ok || !todayRes.ok || !upcomingRes.ok) {
@@ -122,8 +154,12 @@ export default function Home() {
     if (!confirmed) return;
 
     try {
+      const headers = getAuthHeaders();
+      if (!headers) return;
+
       const res = await fetch(`${API_BASE_URL}/jobs/${jobId}`, {
         method: "DELETE",
+        headers,
       });
 
       if (!res.ok) {
@@ -239,7 +275,9 @@ export default function Home() {
           ) : error ? (
             <p className="mt-4 text-red-500">{error}</p>
           ) : filteredJobs.length === 0 ? (
-            <p className="mt-4 text-gray-500">No matching jobs found. Try changing your search or filters. </p>
+            <p className="mt-4 text-gray-500">
+              No matching jobs found. Try changing your search or filters.
+            </p>
           ) : (
             <div className="mt-4 grid gap-4">
               {filteredJobs.map((job) => (
