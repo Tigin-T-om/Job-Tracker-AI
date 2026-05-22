@@ -4,13 +4,13 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 
 import { API_BASE_URL } from "@/lib/api";
-import { getToken } from "@/lib/auth";
-import { removeToken } from "@/lib/auth";
+import { getToken, removeToken } from "@/lib/auth";
 
 import AddJobForm from "@/components/AddJobForm";
 import JobCard from "@/components/JobCard";
 import DashboardCards from "@/components/DashboardCards";
 import FollowUpSections from "@/components/FollowUpSections";
+import Navbar from "@/components/Navbar";
 
 type Job = {
   id: number;
@@ -69,22 +69,22 @@ export default function Home() {
 
   const [currentUser, setCurrentUser] = useState<User | null>(null);
 
+  function handleUnauthorized() {
+    removeToken();
+    router.push("/login");
+  }
+
   function getAuthHeaders() {
     const token = getToken();
 
     if (!token) {
-      router.push("/login");
+      handleUnauthorized();
       return null;
     }
 
     return {
       Authorization: `Bearer ${token}`,
     };
-  }
-
-  function handleLogout() {
-    removeToken();
-    router.push("/login");
   }
 
   async function fetchCurrentUser() {
@@ -95,14 +95,20 @@ export default function Home() {
       const res = await fetch(`${API_BASE_URL}/auth/me`, {
         headers,
       });
+
+      if (res.status === 401) {
+        handleUnauthorized();
+        return;
+      }
+
       if (!res.ok) {
-        throw new Error("Failed to fetch user");
+        return;
       }
 
       const data = await res.json();
       setCurrentUser(data);
     } catch {
-      router.push("/login");
+      handleUnauthorized();
     }
   }
 
@@ -117,12 +123,19 @@ export default function Home() {
         headers,
       });
 
+      if (res.status === 401) {
+        handleUnauthorized();
+        return;
+      }
+
       if (!res.ok) {
-        throw new Error("Failed to fetch jobs");
+        setError("Failed to load jobs");
+        return;
       }
 
       const data = await res.json();
       setJobs(data);
+      setError("");
     } catch {
       setError("Failed to load jobs");
     } finally {
@@ -139,14 +152,19 @@ export default function Home() {
         headers,
       });
 
+      if (res.status === 401) {
+        handleUnauthorized();
+        return;
+      }
+
       if (!res.ok) {
-        throw new Error("Failed to fetch summary");
+        return;
       }
 
       const data = await res.json();
       setSummary(data);
-    } catch (err) {
-      console.error(err);
+    } catch {
+      return;
     }
   }
 
@@ -161,8 +179,17 @@ export default function Home() {
         fetch(`${API_BASE_URL}/jobs/follow-ups/upcoming`, { headers }),
       ]);
 
+      if (
+        overdueRes.status === 401 ||
+        todayRes.status === 401 ||
+        upcomingRes.status === 401
+      ) {
+        handleUnauthorized();
+        return;
+      }
+
       if (!overdueRes.ok || !todayRes.ok || !upcomingRes.ok) {
-        throw new Error("Failed to fetch follow-ups");
+        return;
       }
 
       const overdueData = await overdueRes.json();
@@ -172,8 +199,8 @@ export default function Home() {
       setOverdueFollowUps(overdueData);
       setTodayFollowUps(todayData);
       setUpcomingFollowUps(upcomingData);
-    } catch (err) {
-      console.error(err);
+    } catch {
+      return;
     }
   }
 
@@ -198,8 +225,14 @@ export default function Home() {
         headers,
       });
 
+      if (res.status === 401) {
+        handleUnauthorized();
+        return;
+      }
+
       if (!res.ok) {
-        throw new Error("Failed to delete job");
+        alert("Failed to delete job");
+        return;
       }
 
       await refreshData();
@@ -242,6 +275,8 @@ export default function Home() {
   return (
     <main className="min-h-screen bg-gray-100 px-6 py-8">
       <div className="mx-auto max-w-6xl">
+        <Navbar />
+
         <div className="flex items-start justify-between gap-4">
           <div>
             <h1 className="text-3xl font-bold text-gray-900">Job Tracker AI</h1>
@@ -256,14 +291,8 @@ export default function Home() {
               </p>
             )}
           </div>
-
-          <button
-            onClick={handleLogout}
-            className="rounded bg-red-600 px-4 py-2 text-sm text-white"
-          >
-            Logout
-          </button>
         </div>
+
         <AddJobForm />
 
         {summary && <DashboardCards summary={summary} />}
