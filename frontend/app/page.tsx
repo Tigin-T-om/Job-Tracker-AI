@@ -204,6 +204,20 @@ export default function Home() {
     }
   }
 
+  async function refreshData() {
+    const token = getToken();
+    if (!token) {
+      handleUnauthorized();
+      return;
+    }
+
+    await Promise.all([
+      fetchCurrentUser(),
+      fetchJobs(),
+      fetchSummary(),
+      fetchFollowUps()
+    ]);
+  }
 
   async function handleDelete(jobId: number) {
     const confirmed = confirm("Delete this job?");
