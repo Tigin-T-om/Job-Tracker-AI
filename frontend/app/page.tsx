@@ -204,12 +204,6 @@ export default function Home() {
     }
   }
 
-  async function refreshData() {
-    await fetchCurrentUser();
-    await fetchJobs();
-    await fetchSummary();
-    await fetchFollowUps();
-  }
 
   async function handleDelete(jobId: number) {
     const confirmed = confirm("Delete this job?");
