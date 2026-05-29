@@ -1,10 +1,13 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
+
 import { API_BASE_URL } from "@/lib/api";
 import { getToken } from "@/lib/auth";
 
 export default function AddJobForm() {
+  const router = useRouter();
   const [resumeFile, setResumeFile] = useState<File | null>(null);
 
   const [formData, setFormData] = useState({
@@ -87,7 +90,7 @@ export default function AddJobForm() {
 
     setResumeFile(null);
 
-    window.location.reload();
+    router.push("/jobs");
   }
 
   function handleChange(
