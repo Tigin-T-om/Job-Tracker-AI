@@ -30,7 +30,7 @@ export default function FollowUpSections({
   upcoming: Job[];
 }) {
   return (
-    <section className="mt-8 grid gap-6 lg:gird-cols-3">
+    <section className="mt-8 grid gap-6 lg:grid-cols-3">
       <div className="rounded-xl bg-white p-5 shadow">
         <h3 className="text-lg font-semibold text-red-600">
           Overdue Follow-ups
