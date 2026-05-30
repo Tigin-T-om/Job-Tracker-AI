@@ -1,8 +1,10 @@
+from sys import prefix
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.api.routes.auth import router as auth_router
 from app.api.routes.jobs import router as jobs_router
 from app.api.routes.interviews import router as interview_router
+from app.api.routes.reminders import router as reminders_router
 from app.core.config import settings
 
 app = FastAPI(title=settings.app_name)
@@ -31,3 +33,5 @@ app.include_router(jobs_router, prefix="/jobs", tags=["Jobs"])
 app.include_router(auth_router, prefix="/auth", tags=["Auth"])
 
 app.include_router(interview_router, prefix="/interviews", tags=["Interviews"])
+
+app.include_router(reminders_router, prefix="/reminders", tags=["Reminders"])

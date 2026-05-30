@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { API_BASE_URL } from "@/lib/api";
 import { getToken, removeToken } from "@/lib/auth";
 
+import AlertsPanel from "@/components/AlertsPanel";
 import DashboardCards from "@/components/DashboardCards";
 import FollowUpSections from "@/components/FollowUpSections";
 import Navbar from "@/components/Navbar";
@@ -48,6 +49,7 @@ export default function DashboardPage() {
     const [todayFollowUps, setTodayFollowUps] = useState<Job[]>([]);
     const [upcomingFollowUps, setUpcomingFollowUps] = useState<Job[]>([]);
     const [upcomingInterviews, setUpcomingInterviews] = useState<any[]>([]);
+    const [alerts, setAlerts] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState("");
     function handleUnauthorized() {
@@ -149,6 +151,23 @@ export default function DashboardPage() {
         }
     }
 
+    async function fetchAlerts() {
+        try {
+            const headers = getAuthHeaders();
+            if (!headers) return;
+            const res = await fetch(`${API_BASE_URL}/reminders/alerts`, { headers });
+            if (res.status === 401) {
+                handleUnauthorized();
+                return;
+            }
+            if (!res.ok) return;
+            const data = await res.json();
+            setAlerts(data);
+        } catch (err) {
+            console.error("Failed to load alerts", err);
+        }
+    }
+
     async function refreshData() {
         const token = getToken();
         if (!token) {
@@ -162,6 +181,7 @@ export default function DashboardPage() {
                 fetchSummary(),
                 fetchFollowUps(),
                 fetchUpcomingInterviews(),
+                fetchAlerts(),
             ]);
             setError("");
         } catch (err) {
@@ -201,6 +221,9 @@ export default function DashboardPage() {
                     </div>
                 ) : (
                     <>
+                        <div className="mb-8">
+                            <AlertsPanel alerts={alerts} onRefresh={refreshData} />
+                        </div>
                         {summary && <DashboardCards summary={summary} />}
                         <FollowUpSections
                             overdue={overdueFollowUps}
@@ -217,14 +240,14 @@ export default function DashboardPage() {
                                     </span>
                                     Upcoming Interviews ({upcomingInterviews.length})
                                 </h2>
-                                <a 
-                                    href="/interviews" 
+                                <a
+                                    href="/interviews"
                                     className="text-sm font-semibold text-blue-600 hover:text-blue-700 transition-colors"
                                 >
                                     View all
                                 </a>
                             </div>
-                            
+
                             {upcomingInterviews.length === 0 ? (
                                 <p className="mt-6 text-sm text-gray-500 text-center py-6 border border-dashed border-gray-100 rounded-xl">
                                     No upcoming interviews scheduled.
@@ -232,8 +255,8 @@ export default function DashboardPage() {
                             ) : (
                                 <div className="mt-6 grid gap-4 sm:grid-cols-2 md:grid-cols-3">
                                     {upcomingInterviews.slice(0, 3).map((item) => (
-                                        <div 
-                                            key={item.id} 
+                                        <div
+                                            key={item.id}
                                             className="rounded-xl border border-gray-100 bg-gradient-to-br from-white to-blue-50/10 p-4 shadow-sm hover:shadow transition-all duration-200"
                                         >
                                             <div className="flex justify-between items-start gap-2">
@@ -254,7 +277,7 @@ export default function DashboardPage() {
                                                 📅 {new Date(item.interview_date).toLocaleString()}
                                             </p>
                                             {item.location_type === "online" && item.meeting_link && (
-                                                <a 
+                                                <a
                                                     href={item.meeting_link}
                                                     target="_blank"
                                                     rel="noreferrer"
