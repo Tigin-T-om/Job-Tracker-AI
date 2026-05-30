@@ -4,6 +4,8 @@ import { useState } from "react";
 import { API_BASE_URL } from "@/lib/api";
 import { getToken } from "@/lib/auth";
 
+import ScheduleInterviewModal from "./ScheduleInterviewModal";
+
 type Job = {
   id: number;
   company_name: string;
@@ -66,6 +68,11 @@ export default function JobCard({
   const [showHistory, setShowHistory] = useState(false);
   const [history, setHistory] = useState<StatusHistory[]>([]);
   const [historyLoading, setHistoryLoading] = useState(false);
+
+  const [showScheduleModal, setShowScheduleModal] = useState(false);
+  const [showInterviews, setShowInterviews] = useState(false);
+  const [interviews, setInterviews] = useState<any[]>([]);
+  const [interviewsLoading, setInterviewsLoading] = useState(false);
 
   const [formData, setFormData] = useState({
     company_name: job.company_name,
@@ -156,6 +163,64 @@ export default function JobCard({
       alert("Failed to load status history");
     } finally {
       setHistoryLoading(false);
+    }
+  }
+
+  async function handleToggleInterviews() {
+    if (showInterviews) {
+      setShowInterviews(false);
+      return;
+    }
+
+    const token = getToken();
+    if (!token) {
+      alert("Please login first");
+      return;
+    }
+
+    try {
+      setInterviewsLoading(true);
+      const res = await fetch(`${API_BASE_URL}/interviews/job/${job.id}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (!res.ok) {
+        throw new Error("Failed to fetch interviews");
+      }
+
+      const data = await res.json();
+      setInterviews(data);
+      setShowInterviews(true);
+    } catch {
+      alert("Failed to load interviews");
+    } finally {
+      setInterviewsLoading(false);
+    }
+  }
+
+  async function handleDeleteInterview(interviewId: number) {
+    const confirmed = confirm("Cancel/Delete this interview?");
+    if (!confirmed) return;
+
+    const token = getToken();
+    if (!token) return;
+
+    try {
+      const res = await fetch(`${API_BASE_URL}/interviews/${interviewId}`, {
+        method: "DELETE",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (!res.ok) throw new Error();
+
+      setInterviews(interviews.filter(item => item.id !== interviewId));
+      alert("Interview deleted/cancelled");
+    } catch {
+      alert("Failed to delete interview");
     }
   }
 
@@ -419,6 +484,19 @@ export default function JobCard({
         </button>
 
         <button
+          onClick={() => setShowScheduleModal(true)}
+          className="text-sm font-medium text-blue-600 hover:underline"
+        >
+          Schedule Interview
+        </button>
+        <button
+          onClick={handleToggleInterviews}
+          className="text-sm font-medium text-amber-600 hover:underline"
+        >
+          {showInterviews ? "Hide Interviews" : "Interviews"}
+        </button>
+
+        <button
           onClick={() => onDelete(job.id)}
           className="text-sm font-medium text-red-600 hover:underline"
         >
@@ -455,6 +533,85 @@ export default function JobCard({
             </div>
           )}
         </div>
+      )}
+
+            {showInterviews && (
+        <div className="mt-4 rounded-lg bg-slate-50 p-4 border border-slate-100">
+          <h4 className="text-sm font-semibold text-gray-900">
+            Scheduled Interviews
+          </h4>
+
+          {interviewsLoading ? (
+            <p className="mt-2 text-sm text-gray-500">Loading interviews...</p>
+          ) : interviews.length === 0 ? (
+            <p className="mt-2 text-sm text-gray-500">No interviews scheduled yet.</p>
+          ) : (
+            <div className="mt-3 grid gap-3">
+              {interviews.map((item) => (
+                <div
+                  key={item.id}
+                  className="rounded border border-gray-200 bg-white p-3 text-sm flex justify-between items-start shadow-sm"
+                >
+                  <div className="flex-1 min-w-0 pr-4">
+                    <p className="font-semibold text-blue-600 truncate">
+                      {item.round_type}
+                    </p>
+                    <p className="mt-1 font-medium text-gray-700">
+                      Date: {new Date(item.interview_date).toLocaleString()}
+                    </p>
+                    <p className="mt-1 text-gray-500 text-xs">
+                      Type: <span className="capitalize">{item.location_type}</span>
+                    </p>
+                    {item.location_type === "online" && item.meeting_link && (
+                      <a
+                        href={item.meeting_link}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="mt-1 block text-blue-500 hover:underline break-all text-xs"
+                      >
+                        Join Call: {item.meeting_link}
+                      </a>
+                    )}
+                    {item.location_type === "offline" && item.location && (
+                      <p className="mt-1 text-gray-600 text-xs truncate">
+                        Location: {item.location}
+                      </p>
+                    )}
+                    {item.notes && (
+                      <p className="mt-2 rounded bg-gray-50 p-2 text-xs text-gray-600 whitespace-pre-line border-l-2 border-gray-300">
+                        {item.notes}
+                      </p>
+                    )}
+                  </div>
+                  <button
+                    onClick={() => handleDeleteInterview(item.id)}
+                    className="text-xs text-red-500 hover:text-red-700 font-semibold flex-shrink-0"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {showScheduleModal && (
+        <ScheduleInterviewModal
+          jobId={job.id}
+          companyName={job.company_name}
+          role={job.role}
+          onClose={() => setShowScheduleModal(false)}
+          onScheduled={() => {
+            // If already showing interviews list, refresh it
+            if (showInterviews) {
+              setShowInterviews(false);
+              handleToggleInterviews();
+            } else {
+              handleToggleInterviews();
+            }
+          }}
+        />
       )}
     </div>
   );
