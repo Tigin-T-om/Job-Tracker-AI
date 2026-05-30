@@ -1,4 +1,5 @@
 from sqlalchemy import Column, Integer, String, Text, Date, DateTime, ForeignKey
+from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 from app.db.base import Base
 
@@ -20,3 +21,5 @@ class Job(Base):
     updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
     resume_filename = Column(String, nullable=True)
     resume_file_path = Column(String, nullable=True)
+
+    interviews = relationship("Interview", back_populates="job", cascade="all, delete-orphan")

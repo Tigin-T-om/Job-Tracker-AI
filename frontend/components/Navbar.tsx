@@ -18,6 +18,7 @@ export default function Navbar() {
   const navLinks = [
     { href: "/dashboard", label: "Dashboard" },
     { href: "/jobs", label: "Applications" },
+    { href: "/interviews", label: "Interviews" },
     { href: "/jobs/add", label: "Add Job" },
     { href: "/ai/resume-analysis", label: "AI Resume" },
     { href: "/profile", label: "Profile" },

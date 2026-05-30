@@ -10,8 +10,9 @@ from app.db.base import Base
 from app.models.job import Job
 from app.models.job_status_history import JobStatusHistory
 from app.models.user import User
+from app.models.interview import Interview
 
-# this is the Alembic Config object, which provides
+# this is the Alembic Config object, which provides 
 # access to the values within the .ini file in use.
 config = context.config
 
