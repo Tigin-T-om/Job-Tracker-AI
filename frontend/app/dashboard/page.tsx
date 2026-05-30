@@ -47,6 +47,7 @@ export default function DashboardPage() {
     const [overdueFollowUps, setOverdueFollowUps] = useState<Job[]>([]);
     const [todayFollowUps, setTodayFollowUps] = useState<Job[]>([]);
     const [upcomingFollowUps, setUpcomingFollowUps] = useState<Job[]>([]);
+    const [upcomingInterviews, setUpcomingInterviews] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState("");
     function handleUnauthorized() {
@@ -125,6 +126,29 @@ export default function DashboardPage() {
             console.error("Failed to load follow-ups", err);
         }
     }
+    async function fetchUpcomingInterviews() {
+        try {
+            const headers = getAuthHeaders();
+            if (!headers) return;
+            const res = await fetch(`${API_BASE_URL}/interviews/`, { headers });
+            if (res.status === 401) {
+                handleUnauthorized();
+                return;
+            }
+            if (!res.ok) return;
+            const data = await res.json();
+
+            const now = new Date();
+            const upcoming = data.filter(
+                (item: any) => new Date(item.interview_date) >= now
+            );
+
+            setUpcomingInterviews(upcoming);
+        } catch (err) {
+            console.error("Failed to load upcoming interviews", err);
+        }
+    }
+
     async function refreshData() {
         const token = getToken();
         if (!token) {
@@ -137,6 +161,7 @@ export default function DashboardPage() {
                 fetchCurrentUser(),
                 fetchSummary(),
                 fetchFollowUps(),
+                fetchUpcomingInterviews(),
             ]);
             setError("");
         } catch (err) {
@@ -182,6 +207,67 @@ export default function DashboardPage() {
                             today={todayFollowUps}
                             upcoming={upcomingFollowUps}
                         />
+
+                        <div className="mt-8 rounded-2xl border border-gray-100 bg-white p-6 shadow-sm">
+                            <div className="flex items-center justify-between border-b border-gray-100 pb-4">
+                                <h2 className="text-xl font-bold text-gray-900 flex items-center gap-2">
+                                    <span className="flex h-2 w-2 relative">
+                                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75"></span>
+                                        <span className="relative inline-flex rounded-full h-2 w-2 bg-blue-500"></span>
+                                    </span>
+                                    Upcoming Interviews ({upcomingInterviews.length})
+                                </h2>
+                                <a 
+                                    href="/interviews" 
+                                    className="text-sm font-semibold text-blue-600 hover:text-blue-700 transition-colors"
+                                >
+                                    View all
+                                </a>
+                            </div>
+                            
+                            {upcomingInterviews.length === 0 ? (
+                                <p className="mt-6 text-sm text-gray-500 text-center py-6 border border-dashed border-gray-100 rounded-xl">
+                                    No upcoming interviews scheduled.
+                                </p>
+                            ) : (
+                                <div className="mt-6 grid gap-4 sm:grid-cols-2 md:grid-cols-3">
+                                    {upcomingInterviews.slice(0, 3).map((item) => (
+                                        <div 
+                                            key={item.id} 
+                                            className="rounded-xl border border-gray-100 bg-gradient-to-br from-white to-blue-50/10 p-4 shadow-sm hover:shadow transition-all duration-200"
+                                        >
+                                            <div className="flex justify-between items-start gap-2">
+                                                <span className="inline-block rounded-full bg-blue-50 px-2 py-0.5 text-xs font-semibold text-blue-600">
+                                                    {item.round_type}
+                                                </span>
+                                                <span className="text-xs text-gray-500 capitalize">
+                                                    {item.location_type}
+                                                </span>
+                                            </div>
+                                            <h3 className="mt-3 text-base font-bold text-gray-900 truncate">
+                                                {item.job?.role}
+                                            </h3>
+                                            <p className="text-sm font-semibold text-gray-500 truncate">
+                                                {item.job?.company_name}
+                                            </p>
+                                            <p className="mt-3 text-xs text-gray-600 font-medium">
+                                                📅 {new Date(item.interview_date).toLocaleString()}
+                                            </p>
+                                            {item.location_type === "online" && item.meeting_link && (
+                                                <a 
+                                                    href={item.meeting_link}
+                                                    target="_blank"
+                                                    rel="noreferrer"
+                                                    className="mt-3 inline-flex items-center gap-1 text-xs font-bold text-blue-600 hover:underline"
+                                                >
+                                                    Join Call 🔗
+                                                </a>
+                                            )}
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
                     </>
                 )}
             </div>
