@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { API_BASE_URL } from "@/lib/api";
 import { getToken } from "@/lib/auth";
 
@@ -19,6 +19,8 @@ type Job = {
   notes?: string | null;
   resume_filename?: string | null;
   resume_file_path?: string | null;
+  resume_id?: number | null;
+  resume_name?: string | null;
 };
 
 type StatusHistory = {
@@ -74,6 +76,10 @@ export default function JobCard({
   const [interviews, setInterviews] = useState<any[]>([]);
   const [interviewsLoading, setInterviewsLoading] = useState(false);
 
+  const [resumes, setResumes] = useState<any[]>([]);
+  const [isUploadingNew, setIsUploadingNew] = useState(false);
+  const [newResumeFile, setNewResumeFile] = useState<File | null>(null);
+  const [newResumeName, setNewResumeName] = useState("");
   const [formData, setFormData] = useState({
     company_name: job.company_name,
     role: job.role,
@@ -84,7 +90,31 @@ export default function JobCard({
     applied_date: job.applied_date || "",
     follow_up_date: job.follow_up_date || "",
     notes: job.notes || "",
+    resume_id: job.resume_id ? String(job.resume_id) : "", // <-- Add this to formData
   });
+  // Load resumes when entering Edit Mode
+  useEffect(() => {
+    if (isEditing) {
+      async function loadResumes() {
+        const token = getToken();
+        if (!token) return;
+        try {
+          const res = await fetch(`${API_BASE_URL}/resumes/`, {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          });
+          if (res.ok) {
+            setResumes(await res.json());
+          }
+        } catch (err) {
+          console.error("Failed to load resumes repository", err);
+        }
+      }
+      loadResumes();
+    }
+  }, [isEditing]);
+
 
   function handleChange(
     e: React.ChangeEvent<
@@ -97,16 +127,44 @@ export default function JobCard({
     });
   }
 
-  async function handleUpdate(e: React.FormEvent<HTMLFormElement>) {
+    async function handleUpdate(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
 
     const token = getToken();
-
     if (!token) {
       alert("Please login first");
       return;
     }
 
+    let resumeIdToLink: number | null = formData.resume_id ? parseInt(formData.resume_id) : null;
+
+    // Upload new resume to repository if chosen
+    if (isUploadingNew && newResumeFile && newResumeName) {
+      try {
+        const resumeData = new FormData();
+        resumeData.append("resume_name", newResumeName);
+        resumeData.append("file", newResumeFile);
+
+        const uploadRes = await fetch(`${API_BASE_URL}/resumes/`, {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+          body: resumeData,
+        });
+
+        if (uploadRes.ok) {
+          const uploadResult = await uploadRes.json();
+          resumeIdToLink = uploadResult.id;
+        } else {
+          alert("Failed to upload resume to repository. Saving job without changing resume link.");
+        }
+      } catch (err) {
+        console.error(err);
+      }
+    }
+
+    // We PUT the update, sending resume_id
     const res = await fetch(`${API_BASE_URL}/jobs/${job.id}`, {
       method: "PUT",
       headers: {
@@ -114,9 +172,16 @@ export default function JobCard({
         Authorization: `Bearer ${token}`,
       },
       body: JSON.stringify({
-        ...formData,
+        company_name: formData.company_name,
+        role: formData.role,
+        job_link: formData.job_link || null,
+        location: formData.location || null,
+        source: formData.source || null,
+        status: formData.status,
         applied_date: formData.applied_date || null,
         follow_up_date: formData.follow_up_date || null,
+        notes: formData.notes || null,
+        resume_id: resumeIdToLink,
       }),
     });
 
@@ -126,6 +191,9 @@ export default function JobCard({
     }
 
     setIsEditing(false);
+    setIsUploadingNew(false);
+    setNewResumeName("");
+    setNewResumeFile(null);
     onUpdated();
   }
 
@@ -224,15 +292,19 @@ export default function JobCard({
     }
   }
 
-  async function handleViewResume() {
+    async function handleViewResume() {
     const token = getToken();
-
     if (!token) {
       alert("Please login first");
       return;
     }
 
-    const res = await fetch(`${API_BASE_URL}/jobs/${job.id}/resume/view`, {
+    // Check if linked from repo or legacy
+    const url = job.resume_id
+      ? `${API_BASE_URL}/resumes/${job.resume_id}/view`
+      : `${API_BASE_URL}/jobs/${job.id}/resume/view`;
+
+    const res = await fetch(url, {
       headers: {
         Authorization: `Bearer ${token}`,
       },
@@ -245,19 +317,21 @@ export default function JobCard({
 
     const blob = await res.blob();
     const fileUrl = URL.createObjectURL(blob);
-
     window.open(fileUrl, "_blank");
   }
 
   async function handleDownloadResume() {
     const token = getToken();
-
     if (!token) {
       alert("Please login first");
       return;
     }
 
-    const res = await fetch(`${API_BASE_URL}/jobs/${job.id}/resume/download`, {
+    const url = job.resume_id
+      ? `${API_BASE_URL}/resumes/${job.resume_id}/view`
+      : `${API_BASE_URL}/jobs/${job.id}/resume/download`;
+
+    const res = await fetch(url, {
       headers: {
         Authorization: `Bearer ${token}`,
       },
@@ -273,13 +347,13 @@ export default function JobCard({
 
     const link = document.createElement("a");
     link.href = fileUrl;
-    link.download = job.resume_filename || "resume";
+    link.download = job.resume_name || job.resume_filename || "resume";
     document.body.appendChild(link);
     link.click();
     link.remove();
-
     URL.revokeObjectURL(fileUrl);
   }
+
 
   if (isEditing) {
     return (
@@ -359,6 +433,59 @@ export default function JobCard({
             onChange={handleChange}
             className="rounded border p-3 text-gray-900"
           />
+        </div>
+
+        <div className="md:col-span-2 border-t border-gray-100 pt-3">
+          <label className="block text-xs font-semibold text-gray-700">
+            Linked Resume Version
+          </label>
+          <select
+            name="resume_id"
+            value={isUploadingNew ? "upload-new" : formData.resume_id}
+            onChange={(e) => {
+              if (e.target.value === "upload-new") {
+                setIsUploadingNew(true);
+                setFormData({ ...formData, resume_id: "" });
+              } else {
+                setIsUploadingNew(false);
+                setFormData({ ...formData, resume_id: e.target.value });
+              }
+            }}
+            className="mt-1 block w-full rounded border p-3 text-gray-900 bg-white"
+          >
+            <option value="">No Resume Linked</option>
+            {resumes.map((r) => (
+              <option key={r.id} value={r.id}>
+                {r.resume_name} ({r.filename})
+              </option>
+            ))}
+            <option value="upload-new">+ Upload New Resume version</option>
+          </select>
+          {isUploadingNew && (
+            <div className="mt-3 p-3 rounded-lg bg-gray-50 border border-gray-200 grid gap-3 sm:grid-cols-2">
+              <div>
+                <label className="block text-[10px] uppercase font-bold text-gray-500">Label</label>
+                <input
+                  type="text"
+                  value={newResumeName}
+                  onChange={(e) => setNewResumeName(e.target.value)}
+                  placeholder="e.g. Google Resume v3"
+                  className="mt-1 w-full rounded border p-2 text-sm text-gray-900 bg-white"
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-[10px] uppercase font-bold text-gray-500">File</label>
+                <input
+                  type="file"
+                  accept=".pdf,.doc,.docx"
+                  onChange={(e) => setNewResumeFile(e.target.files?.[0] || null)}
+                  className="mt-1 w-full text-xs text-gray-900"
+                  required
+                />
+              </div>
+            </div>
+          )}
         </div>
 
         <textarea
@@ -449,24 +576,23 @@ export default function JobCard({
           </a>
         )}
 
-        {job.resume_filename ? (
+        {job.resume_name || job.resume_filename ? (
           <>
             <button
               onClick={handleViewResume}
-              className="text-sm font-medium text-green-600 hover:underline"
+              className="text-sm font-semibold text-green-600 hover:underline flex items-center gap-1"
             >
-              View Resume
+              📄 {job.resume_name || job.resume_filename}
             </button>
-
             <button
               onClick={handleDownloadResume}
               className="text-sm font-medium text-indigo-600 hover:underline"
             >
-              Download Resume
+              Download
             </button>
           </>
         ) : (
-          <span className="text-sm text-gray-400">No resume</span>
+          <span className="text-sm text-gray-400">No resume linked</span>
         )}
 
         <button
