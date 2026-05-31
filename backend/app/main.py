@@ -6,6 +6,7 @@ from app.api.routes.jobs import router as jobs_router
 from app.api.routes.interviews import router as interview_router
 from app.api.routes.reminders import router as reminders_router
 from app.api.routes.analytics import router as analytics_router
+from app.api.routes.resumes import router as resumes_router
 from app.core.config import settings
 
 app = FastAPI(title=settings.app_name)
@@ -38,3 +39,5 @@ app.include_router(interview_router, prefix="/interviews", tags=["Interviews"])
 app.include_router(reminders_router, prefix="/reminders", tags=["Reminders"])
 
 app.include_router(analytics_router, prefix="/analytics", tags=["Analytics"])
+
+app.include_router(resumes_router, prefix="/resumes", tags=["Resumes"])
