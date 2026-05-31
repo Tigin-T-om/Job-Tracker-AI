@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { API_BASE_URL } from "@/lib/api";
 import { getToken, removeToken } from "@/lib/auth";
 
+import AnalyticsDashboard from "@/components/AnalyticsDashboard";
 import AlertsPanel from "@/components/AlertsPanel";
 import DashboardCards from "@/components/DashboardCards";
 import FollowUpSections from "@/components/FollowUpSections";
@@ -225,6 +226,8 @@ export default function DashboardPage() {
                             <AlertsPanel alerts={alerts} onRefresh={refreshData} />
                         </div>
                         {summary && <DashboardCards summary={summary} />}
+
+                        <AnalyticsDashboard />
                         <FollowUpSections
                             overdue={overdueFollowUps}
                             today={todayFollowUps}

@@ -10,7 +10,7 @@ class PlatformStat(BaseModel):
 
 # Schemas to represent the full dashboard response
 class JobAnalyticsResponse(BaseModel):
-    total_application: int
+    total_applications: int
     applications_this_month: int
     response_rate: float
     interview_rate: float
