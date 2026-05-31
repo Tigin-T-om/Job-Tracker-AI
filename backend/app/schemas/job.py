@@ -24,6 +24,7 @@ class JobCreate(BaseModel):
     applied_date: Optional[date] = None
     follow_up_date: Optional[date] = None
     notes: Optional[str] = None
+    resume_id: Optional[str] = None
 
 class JobUpdate(BaseModel):
     company_name: str
@@ -35,6 +36,7 @@ class JobUpdate(BaseModel):
     applied_date: Optional[date] = None
     follow_up_date: Optional[date] = None
     notes: Optional[str] = None
+    resume_id: Optional[str] = None
 
 class JobResponse(BaseModel):
     id: int
@@ -51,6 +53,7 @@ class JobResponse(BaseModel):
     updated_at: datetime
     resume_filename: Optional[str] = None
     resume_file_path: Optional[str] = None
+    resume_id: Optional[str] = None
 
 
     class Config:
