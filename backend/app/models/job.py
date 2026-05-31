@@ -1,3 +1,4 @@
+from typing import Optional
 from sqlalchemy import Column, Integer, String, Text, Date, DateTime, ForeignKey
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
@@ -31,3 +32,8 @@ class Job(Base):
     
     # NEW: Relationship to fetch Resume objects directly on a Job
     resume = relationship("Resume", back_populates="jobs")
+
+    @property
+    def resume_name(self) -> Optional[str]:
+        return self.resume.resume_name if self.resume else None
+

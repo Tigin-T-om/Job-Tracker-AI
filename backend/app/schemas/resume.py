@@ -23,3 +23,16 @@ class ResumeStatsResponse(ResumeResponse):
     applications_count: int
     interview_count: int
     callback_rate: float
+
+# Schemas for AI Resume Analysis
+class AIAnalysisRequest(BaseModel):
+    job_description: Optional[str] = None
+
+class AIAnalysisResponse(BaseModel):
+    ats_score: int
+    job_match_percentage: int
+    missing_keywords: list[str]
+    skills_gap: list[str]
+    improvements: list[str]
+    interview_prep: list[str]
+
