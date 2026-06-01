@@ -10,7 +10,8 @@ from app.db.database import get_db
 from app.models.resume import Resume
 from app.models.job import Job
 from app.models.user import User
-from app.schemas.resume import ResumeResponse, ResumeStatsResponse
+from app.schemas.resume import ResumeResponse, ResumeStatsResponse, AIAnalysisRequest, AIAnalysisResponse
+from app.services.ai import extract_text_from_pdf, analyze_resume_content
 
 router = APIRouter()
 
@@ -132,3 +133,31 @@ def delete_resume_file(
     db.delete(resume)
     db.commit()
     return {"message": "Resume deleted successfully"}
+
+@router.post("/{resume_id}/analyze", response_model=AIAnalysisResponse)
+def analyze_resume(
+    resume_id: int,
+    request_data: AIAnalysisRequest,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """
+    Parses a resume version PDF, runs ATS format checks, comparisons against
+    the job description via Gemini, and returns structured feedback.
+    """
+    resume = db.query(Resume).filter(Resume.id == resume_id, Resume.user_id == current_user.id).first()
+    if not resume:
+        raise HTTPException(status_code=404, detail="Resume not found")
+        
+    if not os.path.exists(resume.file_path):
+        raise HTTPException(status_code=404, detail="Physical resume file not found on disk")
+        
+    try:
+        # 1. Extract plain text from PDF
+        resume_text = extract_text_from_pdf(resume.file_path)
+        
+        # 2. Perform analysis via Gemini
+        analysis = analyze_resume_content(resume_text, request_data.job_description)
+        return analysis
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to analyze resume: {str(e)}")
