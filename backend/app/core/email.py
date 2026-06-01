@@ -2,6 +2,9 @@ import os
 import smtplib
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
+from dotenv import load_dotenv
+
+load_dotenv()
 
 # Retrieve configuration from environment
 SMTP_HOST = os.getenv("SMTP_HOST")
