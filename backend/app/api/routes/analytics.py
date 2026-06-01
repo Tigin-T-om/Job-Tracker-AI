@@ -1,6 +1,6 @@
 from datetime import date, timedelta
 from fastapi import APIRouter, Depends
-from sqlalchemy import func
+from sqlalchemy import func, case
 from sqlalchemy.orm import Session
 
 from app.core.dependencies import get_current_user
@@ -76,8 +76,8 @@ def get_job_analytics(
         db.query(
             Job.source,
             func.count(Job.id).label("count"),
-            func.sum(func.case((Job.status.notin_(["Applied", "No Response"]), 1), else_=0)).label("responses"),
-            func.sum(func.case((Job.status.in_(interview_statuses + ["Offer Received"]), 1), else_=0)).label("interviews"),
+            func.sum(case((Job.status.notin_(["Applied", "No Response"]), 1), else_=0)).label("responses"),
+            func.sum(case((Job.status.in_(interview_statuses + ["Offer Received"]), 1), else_=0)).label("interviews"),
         )
         .filter(Job.user_id == current_user.id)
         .group_by(Job.source)
