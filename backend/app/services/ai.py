@@ -57,7 +57,7 @@ def analyze_resume_content(resume_text: str, job_description: Optional[str] = No
     # Configure Gemini SDK
     genai.configure(api_key=api_key)
     
-    model = genai.GenerativeModel("gemini-1.5-flash")
+    model = genai.GenerativeModel("gemini-2.5-flash")
     
     prompt = f"""
     You are an expert ATS (Applicant Tracking System) parser and an elite tech recruiter.
