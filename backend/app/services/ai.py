@@ -121,3 +121,46 @@ def analyze_resume_content(resume_text: str, job_description: Optional[str] = No
     except Exception as e:
         print(f"[AI Service] Error parsing Gemini JSON: {e}. Raw text was: {response.text}")
         raise ValueError("Invalid JSON response from Gemini API.")
+
+def generate_cover_letter_content(resume_text: str, job_description: str) -> str:
+    """
+    Sends the candidate's resume text and target job description to Gemini 2.5 Flash
+    and returns a tailored, professionally formatted cover letter.
+    """
+    api_key = settings.gemini_api_key
+    
+    # Fallback mock cover letter if Gemini API key is missing
+    if not api_key:
+        print("[AI Service] WARNING: gemini_api_key is not set in config. Returning mock cover letter.")
+        return """[Your Name]
+[Your Address]
+[Your Phone/Email]
+[Date]
+Hiring Team
+[Company Name]
+Subject: Application for Job Opportunity
+Dear Hiring Manager,
+I am writing to express my enthusiastic interest in the position described. With my background in software engineering and hands-on experience in building robust applications, I am confident in my ability to contribute value to your team.
+Based on my resume, I have developed strong skills in modern web technologies and full-stack development. I am excited about the opportunity to apply these skills to solve the challenges outlined in your job description.
+Thank you for your time and consideration. I look forward to the possibility of discussing how my experience aligns with your needs.
+Sincerely,
+[Your Name]"""
+    # Configure Gemini SDK
+    genai.configure(api_key=api_key)
+    model = genai.GenerativeModel("gemini-2.5-flash")
+    
+    prompt = f"""
+    You are an expert resume writer and career coach.
+    Write a professional, highly tailored, and persuasive cover letter for a candidate applying to the job described below.
+    Use the candidate's resume details to highlight relevant achievements, skills, and alignment with the role.
+    Do not invent facts that are not present or implied in the resume, but present the existing skills and experience in the best possible light.
+    The cover letter should be ready to send, formatted professionally, and include placeholders like [Company Name], [Your Name], etc. where appropriate if they are not clear from the resume.
+    RESUME:
+    {resume_text}
+    JOB DESCRIPTION:
+    {job_description}
+    Output ONLY the cover letter text, with no extra conversational text or markdown wrappers like ```markdown.
+    """
+    
+    response = model.generate_content(prompt)
+    return response.text.strip()
