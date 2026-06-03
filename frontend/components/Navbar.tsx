@@ -20,7 +20,7 @@ export default function Navbar() {
     { href: "/jobs", label: "Applications" },
     { href: "/interviews", label: "Interviews" },
     { href: "/jobs/add", label: "Add Job" },
-    { href: "/ai/resume-analysis", label: "AI Resume" },
+    { href: "/ai/cover-letter", label: "AI Cover Letter" },
     { href: "/profile", label: "Profile" },
   ];
 
