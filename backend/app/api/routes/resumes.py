@@ -1,7 +1,8 @@
+import io
 import os
 import shutil
 from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, StreamingResponse
 from sqlalchemy import func
 from sqlalchemy.orm import Session
 
@@ -12,6 +13,7 @@ from app.models.job import Job
 from app.models.user import User
 from app.schemas.resume import ResumeResponse, ResumeStatsResponse, AIAnalysisRequest, AIAnalysisResponse
 from app.services.ai import extract_text_from_pdf, analyze_resume_content
+from app.services.storage import storage_service
 
 router = APIRouter()
 
@@ -22,19 +24,11 @@ def upload_resume_version(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    upload_dir = "uploads/resumes"
-    os.makedirs(upload_dir, exist_ok=True)
-
-    file_ext = os.path.splitext(file.filename or "")[1]
+    # Read file content into memory bytes
+    file_bytes = file.file.read()
     
-    # Save file with unique timestamp to prevent name collisions
-    import time
-    saved_filename = f"user_{current_user.id}_repo_{int(time.time())}{file_ext}"
-    file_path = os.path.join(upload_dir, saved_filename)
-
-    with open(file_path, "wb") as buffer:
-        shutil.copyfileobj(file.file, buffer)
-
+    # Upload via storage service
+    file_path = storage_service.upload_file(file_bytes, file.filename)
     new_resume = Resume(
         user_id=current_user.id,
         resume_name=resume_name,
@@ -108,10 +102,20 @@ def view_resume_file(
     if not resume:
         raise HTTPException(status_code=404, detail="Resume not found")
     
-    if not os.path.exists(resume.file_path):
-        raise HTTPException(status_code=404, detail="Physical file not found on disk")
-        
-    return FileResponse(path=resume.file_path)
+    if resume.file_path.startswith("google_drive:"):
+        try:
+            file_bytes = storage_service.download_file(resume.file_path)
+            return StreamingResponse(
+                io.BytesIO(file_bytes),
+                media_type="application/pdf",
+                headers={"Content-Disposition": f"inline; filename={resume.filename}"}
+            )
+        except Exception as e:
+            raise HTTPException(status_code=404, detail=f"File download failed: {str(e)}")
+    else:
+        if not os.path.exists(resume.file_path):
+            raise HTTPException(status_code=404, detail="Physical file not found on disk")
+        return FileResponse(path=resume.file_path)
 
 @router.delete("/{resume_id}")
 def delete_resume_file(
@@ -123,16 +127,12 @@ def delete_resume_file(
     if not resume:
         raise HTTPException(status_code=404, detail="Resume not found")
     
-    # Safely remove the file from local storage
-    try:
-        if os.path.exists(resume.file_path):
-            os.remove(resume.file_path)
-    except Exception as e:
-        print(f"Error removing file from disk: {e}")
+    storage_service.delete_file(resume.file_path)
         
     db.delete(resume)
     db.commit()
     return {"message": "Resume deleted successfully"}
+
 
 @router.post("/{resume_id}/analyze", response_model=AIAnalysisResponse)
 def analyze_resume(

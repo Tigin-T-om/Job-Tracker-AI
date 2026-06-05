@@ -1,9 +1,9 @@
-import os
+import io, os
 import shutil
 from datetime import date, timedelta
 
 from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, StreamingResponse
 from sqlalchemy import func
 from sqlalchemy.orm import Session
 
@@ -21,6 +21,7 @@ from app.schemas.job import (
     JobStatusHistoryResponse,
     JobUpdate,
 )
+from app.services.storage import storage_service
 
 router = APIRouter()
 
@@ -252,22 +253,12 @@ def upload_resume(
 ):
     job = get_user_job_or_404(job_id, db, current_user)
 
-    upload_dir = "uploads/resumes"
-    os.makedirs(upload_dir, exist_ok=True)
-
-    file_extension = os.path.splitext(resume.filename or "")[1]
-    saved_filename = f"user_{current_user.id}_job_{job_id}_resume{file_extension}"
-    file_path = os.path.join(upload_dir, saved_filename)
-
-    with open(file_path, "wb") as buffer:
-        shutil.copyfileobj(resume.file, buffer)
-
+    file_bytes = resume.file.read()
+    file_path = storage_service.upload_file(file_bytes, resume.filename)
     job.resume_filename = resume.filename
     job.resume_file_path = file_path
-
     db.commit()
     db.refresh(job)
-
     return job
 
 
@@ -282,11 +273,23 @@ def download_resume(
     if not job.resume_file_path:
         raise HTTPException(status_code=404, detail="Resume not found")
 
-    return FileResponse(
-        path=job.resume_file_path,
-        filename=job.resume_filename,
-        media_type="application/octet-stream",
-    )
+    if job.resume_file_path.startswith("google_drive:"):
+        try:
+            file_bytes = storage_service.download_file(job.resume_file_path)
+            return StreamingResponse(
+                io.BytesIO(file_bytes),
+                media_type="application/octet-stream",
+                headers={"Content-Disposition": f"attachment; filename={job.resume_filename}"}
+            )
+        except Exception as e:
+            raise HTTPException(status_code=404, detail=f"File download failed: {str(e)}")
+    else:
+        return FileResponse(
+            path=job.resume_file_path,
+            filename=job.resume_filename,
+            media_type="application/octet-stream",
+        )
+
 
 
 @router.get("/{job_id}/resume/view")
@@ -300,7 +303,18 @@ def view_resume(
     if not job.resume_file_path:
         raise HTTPException(status_code=404, detail="Resume not found")
 
-    return FileResponse(path=job.resume_file_path)
+    if job.resume_file_path.startswith("google_drive:"):
+        try:
+            file_bytes = storage_service.download_file(job.resume_file_path)
+            return StreamingResponse(
+                io.BytesIO(file_bytes),
+                media_type="application/pdf",
+                headers={"Content-Disposition": f"inline; filename={job.resume_filename}"}
+            )
+        except Exception as e:
+            raise HTTPException(status_code=404, detail=f"File view failed: {str(e)}")
+    else:
+        return FileResponse(path=job.resume_file_path)
 
 
 @router.get("/{job_id}", response_model=JobResponse)

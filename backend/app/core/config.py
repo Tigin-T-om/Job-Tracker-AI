@@ -10,6 +10,9 @@ class Settings(BaseSettings):
     access_token_expire_minutes: int = 60
 
     gemini_api_key: str = ""
+
+    storage_provider: str = "google_drive"
+    google_drive_folder_id: str = ""
     
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 

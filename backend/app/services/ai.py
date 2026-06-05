@@ -1,24 +1,30 @@
-import os
+import io, os
 import json
 import google.generativeai as genai
 from pypdf import PdfReader
 from typing import Optional
 from app.core.config import settings
+from app.services.storage import storage_service
 
 def extract_text_from_pdf(file_path: str) -> str:
     """
-    Extracts plain text from a PDF file using pypdf.
+    Extracts plain text from a PDF file using pypdf from local disk or Google Drive.
     """
-    if not os.path.exists(file_path):
-        raise FileNotFoundError(f"PDF file not found at path: {file_path}")
+    if file_path.startswith("google_drive:"):
+        file_bytes = storage_service.download_file(file_path)
+        reader = PdfReader(io.BytesIO(file_bytes))
+    else:
+        if not os.path.exists(file_path):
+            raise FileNotFoundError(f"PDF file not found at path: {file_path}")
+        reader = PdfReader(file_path)
         
-    reader = PdfReader(file_path)
     text = ""
     for page in reader.pages:
         extracted = page.extract_text()
         if extracted:
             text += extracted + "\n"
     return text.strip()
+
 
 def analyze_resume_content(resume_text: str, job_description: Optional[str] = None) -> dict:
     """
