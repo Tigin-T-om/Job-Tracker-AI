@@ -107,3 +107,11 @@ node_modules/
 
 backend/uploads/
 
+
+# =================
+# Credentials
+# =================
+
+backend/google_drive_credentials.json
+backend/*credentials*.json
+backend/*.json
