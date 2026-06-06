@@ -254,7 +254,7 @@ def upload_resume(
     job = get_user_job_or_404(job_id, db, current_user)
 
     file_bytes = resume.file.read()
-    file_path = storage_service.upload_file(file_bytes, resume.filename)
+    file_path = storage_service.upload_file(file_bytes, resume.filename, current_user.id)
     job.resume_filename = resume.filename
     job.resume_file_path = file_path
     db.commit()
@@ -275,7 +275,7 @@ def download_resume(
 
     if job.resume_file_path.startswith("google_drive:"):
         try:
-            file_bytes = storage_service.download_file(job.resume_file_path)
+            file_bytes = storage_service.download_file(job.resume_file_path, current_user.id)
             return StreamingResponse(
                 io.BytesIO(file_bytes),
                 media_type="application/octet-stream",
@@ -305,7 +305,7 @@ def view_resume(
 
     if job.resume_file_path.startswith("google_drive:"):
         try:
-            file_bytes = storage_service.download_file(job.resume_file_path)
+            file_bytes = storage_service.download_file(job.resume_file_path, current_user.id)
             return StreamingResponse(
                 io.BytesIO(file_bytes),
                 media_type="application/pdf",

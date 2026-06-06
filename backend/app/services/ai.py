@@ -6,12 +6,12 @@ from typing import Optional
 from app.core.config import settings
 from app.services.storage import storage_service
 
-def extract_text_from_pdf(file_path: str) -> str:
+def extract_text_from_pdf(file_path: str, user_id: int) -> str:
     """
     Extracts plain text from a PDF file using pypdf from local disk or Google Drive.
     """
     if file_path.startswith("google_drive:"):
-        file_bytes = storage_service.download_file(file_path)
+        file_bytes = storage_service.download_file(file_path, user_id)
         reader = PdfReader(io.BytesIO(file_bytes))
     else:
         if not os.path.exists(file_path):

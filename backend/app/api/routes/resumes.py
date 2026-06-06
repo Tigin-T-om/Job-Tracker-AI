@@ -28,7 +28,7 @@ def upload_resume_version(
     file_bytes = file.file.read()
     
     # Upload via storage service
-    file_path = storage_service.upload_file(file_bytes, file.filename)
+    file_path = storage_service.upload_file(file_bytes, file.filename, current_user.id)
     new_resume = Resume(
         user_id=current_user.id,
         resume_name=resume_name,
@@ -104,7 +104,7 @@ def view_resume_file(
     
     if resume.file_path.startswith("google_drive:"):
         try:
-            file_bytes = storage_service.download_file(resume.file_path)
+            file_bytes = storage_service.download_file(resume.file_path, current_user.id)
             return StreamingResponse(
                 io.BytesIO(file_bytes),
                 media_type="application/pdf",
@@ -127,7 +127,7 @@ def delete_resume_file(
     if not resume:
         raise HTTPException(status_code=404, detail="Resume not found")
     
-    storage_service.delete_file(resume.file_path)
+    storage_service.delete_file(resume.file_path, current_user.id)
         
     db.delete(resume)
     db.commit()
@@ -149,14 +149,12 @@ def analyze_resume(
     if not resume:
         raise HTTPException(status_code=404, detail="Resume not found")
         
-    if not os.path.exists(resume.file_path):
+    if not resume.file_path.startswith("google_drive:") and not os.path.exists(resume.file_path):
         raise HTTPException(status_code=404, detail="Physical resume file not found on disk")
         
     try:
-        # 1. Extract plain text from PDF
-        resume_text = extract_text_from_pdf(resume.file_path)
-        
-        # 2. Perform analysis via Gemini
+    
+        resume_text = extract_text_from_pdf(resume.file_path, current_user.id)
         analysis = analyze_resume_content(resume_text, request_data.job_description)
         return analysis
     except Exception as e:

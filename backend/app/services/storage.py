@@ -4,50 +4,65 @@ from app.core.config import settings
 class StorageService:
     def __init__(self):
         self.provider = settings.storage_provider
-        self.drive_service = None
-        
-        if self.provider == "google_drive":
-            try:
-                from google.oauth2 import service_account
-                from googleapiclient.discovery import build
-                
-                credentials_path = "google_drive_credentials.json"
-                if not os.path.exists(credentials_path):
-                    print("[Storage Service] WARNING: google_drive_credentials.json not found! Falling back to local storage.")
-                    self.provider = "local"
-                else:
-                    credentials = service_account.Credentials.from_service_account_file(
-                        credentials_path,
-                        scopes=["https://www.googleapis.com/auth/drive"]
-                    )
-                    self.drive_service = build("drive", "v3", credentials=credentials)
-            except Exception as e:
-                print(f"[Storage Service] Error configuring Google Drive client: {e}. Falling back to local storage.")
-                self.provider = "local"
-
-    def upload_file(self, file_content: bytes, filename: str, sub_dir: str = "uploads/resumes") -> str:
+    def _get_drive_service(self, user_id: int):
         """
-        Uploads a file. Returns either local file path or Google Drive file ID.
+        Loads the user-specific credentials file.
         """
-        if self.provider == "google_drive" and self.drive_service:
+        token_path = f"google_drive_token_user_{user_id}.json"
+        if not os.path.exists(token_path):
+            return None
+        try:
+            from google.oauth2.credentials import Credentials
+            from google.auth.transport.requests import Request
+            from googleapiclient.discovery import build
+            creds = Credentials.from_authorized_user_file(
+                token_path, 
+                scopes=["https://www.googleapis.com/auth/drive.file"]
+            )
+            # Refresh token for this specific user
+            if creds and creds.expired and creds.refresh_token:
+                creds.refresh(Request())
+                with open(token_path, "w") as f:
+                    f.write(creds.to_json())
+            return build("drive", "v3", credentials=creds)
+        except Exception as e:
+            print(f"[Storage Service] Error loading Google OAuth credentials for user {user_id}: {e}")
+            return None
+    def _get_or_create_folder(self, service) -> str:
+        try:
+            query = "mimeType = 'application/vnd.google-apps.folder' and name = 'JobTrackerAI' and trashed = false"
+            results = service.files().list(q=query, spaces='drive', fields='files(id, name)').execute()
+            files = results.get('files', [])
+            if files:
+                return files[0]['id']
+            folder_metadata = {
+                'name': 'JobTrackerAI',
+                'mimeType': 'application/vnd.google-apps.folder'
+            }
+            folder = service.files().create(body=folder_metadata, fields='id').execute()
+            return folder.get('id')
+        except Exception as e:
+            print(f"[Storage Service] Error creating folder: {e}")
+            return ""
+    def upload_file(self, file_content: bytes, filename: str, user_id: int, sub_dir: str = "uploads/resumes") -> str:
+        service = self._get_drive_service(user_id)
+        if self.provider == "google_drive" and service:
             try:
                 from googleapiclient.http import MediaIoBaseUpload
                 import io
-                
+                folder_id = self._get_or_create_folder(service)
                 file_metadata = {'name': filename}
-                if settings.google_drive_folder_id:
-                    file_metadata['parents'] = [settings.google_drive_folder_id]
-                
+                if folder_id:
+                    file_metadata['parents'] = [folder_id]
                 media = MediaIoBaseUpload(io.BytesIO(file_content), mimetype='application/pdf', resumable=True)
-                file = self.drive_service.files().create(body=file_metadata, media_body=media, fields='id').execute()
-                # Prefixing with google_drive: allows the system to identify how to retrieve this file
+                file = service.files().create(body=file_metadata, media_body=media, fields='id').execute()
+                
                 return f"google_drive:{file.get('id')}"
             except Exception as e:
-                print(f"[Storage Service] Google Drive upload failed: {e}. Falling back to local.")
+                print(f"[Storage Service] Upload failed for user {user_id}: {e}. Falling back to local.")
                 return self._save_locally(file_content, filename, sub_dir)
         else:
             return self._save_locally(file_content, filename, sub_dir)
-
     def _save_locally(self, file_content: bytes, filename: str, sub_dir: str) -> str:
         os.makedirs(sub_dir, exist_ok=True)
         import time
@@ -57,18 +72,14 @@ class StorageService:
         with open(file_path, "wb") as buffer:
             buffer.write(file_content)
         return file_path
-
-    def download_file(self, path_or_id: str) -> bytes:
-        """
-        Downloads / reads file bytes based on path or ID.
-        """
-        if path_or_id.startswith("google_drive:") and self.drive_service:
+    def download_file(self, path_or_id: str, user_id: int) -> bytes:
+        service = self._get_drive_service(user_id)
+        if path_or_id.startswith("google_drive:") and service:
             try:
                 from googleapiclient.http import MediaIoBaseDownload
                 import io
-                
                 file_id = path_or_id.split("google_drive:")[1]
-                request = self.drive_service.files().get_media(fileId=file_id)
+                request = service.files().get_media(fileId=file_id)
                 fh = io.BytesIO()
                 downloader = MediaIoBaseDownload(fh, request)
                 done = False
@@ -84,15 +95,12 @@ class StorageService:
                 raise FileNotFoundError(f"Local file not found at: {local_path}")
             with open(local_path, "rb") as f:
                 return f.read()
-
-    def delete_file(self, path_or_id: str) -> None:
-        """
-        Deletes the file from local disk or Google Drive.
-        """
-        if path_or_id.startswith("google_drive:") and self.drive_service:
+    def delete_file(self, path_or_id: str, user_id: int) -> None:
+        service = self._get_drive_service(user_id)
+        if path_or_id.startswith("google_drive:") and service:
             try:
                 file_id = path_or_id.split("google_drive:")[1]
-                self.drive_service.files().delete(fileId=file_id).execute()
+                service.files().delete(fileId=file_id).execute()
             except Exception as e:
                 print(f"[Storage Service] Failed to delete file from Google Drive: {e}")
         else:
@@ -101,5 +109,6 @@ class StorageService:
                     os.remove(path_or_id)
             except Exception as e:
                 print(f"[Storage Service] Failed to delete local file: {e}")
+
 
 storage_service = StorageService()

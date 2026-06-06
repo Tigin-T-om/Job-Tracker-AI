@@ -29,16 +29,15 @@ def generate_cover_letter(
     if not resume:
         raise HTTPException(status_code=404, detail="Resume not found")
         
-    if not os.path.exists(resume.file_path):
+    if not resume.file_path.startswith("google_drive:") and not os.path.exists(resume.file_path):
         raise HTTPException(status_code=404, detail="Physical resume file not found on disk")
         
     try:
-        # 1. Extract plain text from PDF
-        resume_text = extract_text_from_pdf(resume.file_path)
-        
-        # 2. Generate cover letter content via Gemini
+        resume_text = extract_text_from_pdf(resume.file_path, current_user.id)
         cover_letter_text = generate_cover_letter_content(resume_text, request_data.job_description)
         
         return CoverLetterResponse(cover_letter=cover_letter_text)
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to generate cover letter: {str(e)}")
+
+
