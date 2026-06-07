@@ -1,7 +1,14 @@
+# ---------------------------------------------------------------------------
+# File: schemas/job.py
+# Description: Pydantic schemas representing job listings, updates, responses,
+#              status audit logs, summaries, and Dashboard analytics counters.
+# ---------------------------------------------------------------------------
+
 from pydantic import BaseModel
 from typing import Optional, Literal
 from datetime import date, datetime
 
+# Enum for allowed job application status states
 JobStatusType = Literal[
     "Applied",
     "No Response",
@@ -15,6 +22,9 @@ JobStatusType = Literal[
 ]
 
 class JobCreate(BaseModel):
+    """
+    Schema representing parameters to create a new job application.
+    """
     company_name: str
     role: str
     job_link: Optional[str] = None
@@ -27,6 +37,9 @@ class JobCreate(BaseModel):
     resume_id: Optional[int] = None
 
 class JobUpdate(BaseModel):
+    """
+    Schema representing parameters to update an existing job application.
+    """
     company_name: str
     role: str
     job_link: Optional[str] = None
@@ -39,6 +52,9 @@ class JobUpdate(BaseModel):
     resume_id: Optional[int] = None
 
 class JobResponse(BaseModel):
+    """
+    Response schema returning complete information about a job application.
+    """
     id: int
     company_name: str
     role: str
@@ -59,8 +75,10 @@ class JobResponse(BaseModel):
     class Config:
         from_attributes = True
 
-
 class JobStatusHistoryResponse(BaseModel):
+    """
+    Audit log response schema recording historical changes to application status.
+    """
     id: int
     job_id: int
     old_status: str
@@ -70,13 +88,17 @@ class JobStatusHistoryResponse(BaseModel):
     class Config:
         from_attributes = True
 
-
 class JobStatusCount(BaseModel):
+    """
+    Schema for mapping a single status category to its numerical frequency.
+    """
     status: str
     count: int
 
-
 class JobDashboardSummary(BaseModel):
+    """
+    Schema representing all aggregated counters shown on the main dashboard.
+    """
     total_jobs: int
     applied: int
     no_response: int

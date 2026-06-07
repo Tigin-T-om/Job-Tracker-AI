@@ -1,3 +1,11 @@
+# ---------------------------------------------------------------------------
+# ai.py - AI service layer (Google Gemini integration)
+# Contains helper functions for:
+#   1. Extracting text from uploaded PDF resumes (pypdf)
+#   2. Running ATS analysis via Gemini (structured JSON output)
+#   3. Generating tailored cover letters via Gemini
+# Falls back to mock data if the GEMINI_API_KEY is not configured.
+# ---------------------------------------------------------------------------
 import io, os
 import json
 import google.generativeai as genai

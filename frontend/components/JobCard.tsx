@@ -1,8 +1,16 @@
+// ---------------------------------------------------------------------------
+// JobCard.tsx - Single job application card component
+// Renders a job entry with its details, status badge, and action buttons.
+// Supports inline editing, status history viewing, interview scheduling,
+// and resume viewing/downloading.
+// ---------------------------------------------------------------------------
 "use client";
 
 import { useEffect, useState } from "react";
 import { API_BASE_URL } from "@/lib/api";
 import { getToken } from "@/lib/auth";
+import { showToast } from "@/components/Toast";
+
 
 import ScheduleInterviewModal from "./ScheduleInterviewModal";
 
@@ -31,6 +39,7 @@ type StatusHistory = {
   changed_at: string;
 };
 
+/** Returns a Tailwind CSS class string for the status badge colour. */
 function getStatusClass(status: string) {
   switch (status) {
     case "Applied":
@@ -116,6 +125,7 @@ export default function JobCard({
   }, [isEditing]);
 
 
+  /** Update form state when any input changes. */
   function handleChange(
     e: React.ChangeEvent<
       HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
@@ -127,12 +137,13 @@ export default function JobCard({
     });
   }
 
-    async function handleUpdate(e: React.FormEvent<HTMLFormElement>) {
+    /** Submit the edited job data to the backend. */
+  async function handleUpdate(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
 
     const token = getToken();
     if (!token) {
-      alert("Please login first");
+      showToast("Please login first", "warning");
       return;
     }
 
@@ -157,7 +168,7 @@ export default function JobCard({
           const uploadResult = await uploadRes.json();
           resumeIdToLink = uploadResult.id;
         } else {
-          alert("Failed to upload resume to repository. Saving job without changing resume link.");
+          showToast("Failed to upload resume. Saving job without changing resume link.", "error");
         }
       } catch (err) {
         console.error(err);
@@ -186,7 +197,7 @@ export default function JobCard({
     });
 
     if (!res.ok) {
-      alert("Failed to update job");
+      showToast("Failed to update job", "error");
       return;
     }
 
@@ -197,6 +208,7 @@ export default function JobCard({
     onUpdated();
   }
 
+  /** Toggle the status change history panel. */
   async function handleToggleHistory() {
     if (showHistory) {
       setShowHistory(false);
@@ -206,7 +218,7 @@ export default function JobCard({
     const token = getToken();
 
     if (!token) {
-      alert("Please login first");
+      showToast("Please login first", "warning");
       return;
     }
 
@@ -228,12 +240,13 @@ export default function JobCard({
       setHistory(data);
       setShowHistory(true);
     } catch {
-      alert("Failed to load status history");
+      showToast("Failed to load status history", "error");
     } finally {
       setHistoryLoading(false);
     }
   }
 
+  /** Toggle the interviews panel for this job. */
   async function handleToggleInterviews() {
     if (showInterviews) {
       setShowInterviews(false);
@@ -242,7 +255,7 @@ export default function JobCard({
 
     const token = getToken();
     if (!token) {
-      alert("Please login first");
+      showToast("Please login first", "warning");
       return;
     }
 
@@ -262,12 +275,13 @@ export default function JobCard({
       setInterviews(data);
       setShowInterviews(true);
     } catch {
-      alert("Failed to load interviews");
+      showToast("Failed to load interviews", "error");
     } finally {
       setInterviewsLoading(false);
     }
   }
 
+  /** Delete a specific interview entry. */
   async function handleDeleteInterview(interviewId: number) {
     const confirmed = confirm("Cancel/Delete this interview?");
     if (!confirmed) return;
@@ -286,16 +300,17 @@ export default function JobCard({
       if (!res.ok) throw new Error();
 
       setInterviews(interviews.filter(item => item.id !== interviewId));
-      alert("Interview deleted/cancelled");
+      showToast("Interview deleted/cancelled", "success");
     } catch {
-      alert("Failed to delete interview");
+      showToast("Failed to delete interview", "error");
     }
   }
 
-    async function handleViewResume() {
+    /** Open the linked resume in a new browser tab. */
+  async function handleViewResume() {
     const token = getToken();
     if (!token) {
-      alert("Please login first");
+      showToast("Please login first", "warning");
       return;
     }
 
@@ -311,7 +326,7 @@ export default function JobCard({
     });
 
     if (!res.ok) {
-      alert("Failed to open resume");
+      showToast("Failed to open resume", "error");
       return;
     }
 
@@ -320,10 +335,11 @@ export default function JobCard({
     window.open(fileUrl, "_blank");
   }
 
+  /** Download the linked resume as a file. */
   async function handleDownloadResume() {
     const token = getToken();
     if (!token) {
-      alert("Please login first");
+      showToast("Please login first", "warning");
       return;
     }
 
@@ -338,7 +354,7 @@ export default function JobCard({
     });
 
     if (!res.ok) {
-      alert("Failed to download resume");
+      showToast("Failed to download resume", "error");
       return;
     }
 
@@ -363,11 +379,12 @@ export default function JobCard({
       >
         <h3 className="text-lg font-semibold text-gray-900">Edit Job</h3>
 
-        <div className="mt-4 grid gap-4 md:grid-cols-2">
+                <div className="mt-4 grid gap-4 md:grid-cols-2">
           <input
             name="company_name"
             value={formData.company_name}
             onChange={handleChange}
+            placeholder="Company Name"
             required
             className="rounded border p-3 text-gray-900"
           />
@@ -376,6 +393,7 @@ export default function JobCard({
             name="role"
             value={formData.role}
             onChange={handleChange}
+            placeholder="Role / Position"
             required
             className="rounded border p-3 text-gray-900"
           />
@@ -384,6 +402,7 @@ export default function JobCard({
             name="job_link"
             value={formData.job_link}
             onChange={handleChange}
+            placeholder="Job Link (URL)"
             className="rounded border p-3 text-gray-900"
           />
 
@@ -391,6 +410,7 @@ export default function JobCard({
             name="location"
             value={formData.location}
             onChange={handleChange}
+            placeholder="Location"
             className="rounded border p-3 text-gray-900"
           />
 
@@ -398,6 +418,7 @@ export default function JobCard({
             name="source"
             value={formData.source}
             onChange={handleChange}
+            placeholder="Source (LinkedIn, Indeed, etc.)"
             className="rounded border p-3 text-gray-900"
           />
 
@@ -423,6 +444,7 @@ export default function JobCard({
             name="applied_date"
             value={formData.applied_date}
             onChange={handleChange}
+            placeholder="Applied Date"
             className="rounded border p-3 text-gray-900"
           />
 
@@ -431,6 +453,7 @@ export default function JobCard({
             name="follow_up_date"
             value={formData.follow_up_date}
             onChange={handleChange}
+            placeholder="Follow-up Date"
             className="rounded border p-3 text-gray-900"
           />
         </div>
@@ -492,6 +515,7 @@ export default function JobCard({
           name="notes"
           value={formData.notes}
           onChange={handleChange}
+          placeholder="Notes about this application..."
           className="mt-4 w-full rounded border p-3 text-gray-900"
         />
 

@@ -1,3 +1,9 @@
+# ---------------------------------------------------------------------------
+# analytics.py - Application analytics API route
+# Calculates pipeline conversion metrics (response rate, interview rate,
+# offer rate), platform distribution, and status breakdown for the
+# current user's job applications.
+# ---------------------------------------------------------------------------
 from datetime import date, timedelta
 from fastapi import APIRouter, Depends
 from sqlalchemy import func, case
@@ -11,6 +17,7 @@ from app.schemas.analytics import JobAnalyticsResponse, PlatformStat
 
 router = APIRouter()
 
+# ---- Main analytics endpoint ----
 @router.get("/", response_model=JobAnalyticsResponse)
 def get_job_analytics(
     db: Session = Depends(get_db),

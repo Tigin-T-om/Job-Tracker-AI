@@ -1,3 +1,8 @@
+// ---------------------------------------------------------------------------
+// FollowUpSections.tsx - Follow-up tracking section component
+// Renders three columns for overdue, today's, and upcoming follow-ups.
+// Each column lists the relevant job applications with their details.
+// ---------------------------------------------------------------------------
 type Job = {
   id: number;
   company_name: string;
@@ -6,6 +11,7 @@ type Job = {
   follow_up_date?: string | null;
 };
 
+/** Card displaying a single follow-up job entry. */
 function FollowUpCard({ job }: { job: Job }) {
   return (
     <div className="rounded-lg border border-gray-200 bg-white p-4">

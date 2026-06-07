@@ -1,8 +1,15 @@
+// ---------------------------------------------------------------------------
+// ScheduleInterviewModal.tsx - Interview scheduling modal component
+// Full-screen overlay modal for scheduling a new interview round.
+// Supports online (video call) and offline (in-person) location types.
+// ---------------------------------------------------------------------------
 "use client";
 
 import { useState } from "react";
 import { API_BASE_URL } from "@/lib/api";
 import { getToken } from "@/lib/auth";
+import { showToast } from "@/components/Toast";
+
 
 type ScheduleInterviewModalProps = {
   jobId: number;
@@ -41,6 +48,7 @@ export default function ScheduleInterviewModal({
     });
   }
 
+  /** Submit the interview details to the backend API. */
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setError("");
@@ -82,7 +90,7 @@ export default function ScheduleInterviewModal({
         throw new Error(errorData.detail || "Failed to schedule interview");
       }
 
-      alert("Interview scheduled successfully!");
+      showToast("Interview scheduled successfully!", "success");
       onScheduled();
       onClose();
     } catch (err: any) {

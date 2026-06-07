@@ -1,3 +1,8 @@
+// ---------------------------------------------------------------------------
+// AnalyticsDashboard.tsx - Pipeline analytics visualisation component
+// Fetches and displays conversion rates (response, interview, offer) as
+// animated progress bars, along with a platform distribution breakdown.
+// ---------------------------------------------------------------------------
 "use client";
 
 import { useEffect, useState } from "react";

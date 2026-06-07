@@ -1,3 +1,9 @@
+// ---------------------------------------------------------------------------
+// File: dashboard/page.tsx
+// Description: Main dashboard interface displaying job statistics, upcoming
+//              interviews, alert panels, and job application follow-ups.
+// ---------------------------------------------------------------------------
+
 "use client"
 
 import { useEffect, useState } from "react";
@@ -12,6 +18,7 @@ import DashboardCards from "@/components/DashboardCards";
 import FollowUpSections from "@/components/FollowUpSections";
 import Navbar from "@/components/Navbar";
 
+// Represents a job application reference for follow-up notifications
 type Job = {
     id: number;
     company_name: string;
@@ -20,6 +27,7 @@ type Job = {
     follow_up_date: string;
 };
 
+// Represents aggregated dashboard metrics/counters
 type DashboardSummary = {
     total_jobs: number;
     applied: number;
@@ -36,12 +44,18 @@ type DashboardSummary = {
     upcoming_follow_ups: number;
 };
 
+// Represents basic user account information
 type User = {
     id: number;
     name: string;
     email: string;
 };
 
+/**
+ * Main dashboard page component.
+ * Renders user welcome headers, alert list, aggregated metrics, graphs,
+ * follow-up schedules, and upcoming interviews.
+ */
 export default function DashboardPage() {
     const router = useRouter();
     const [currentUser, setCurrentUser] = useState<User | null>(null);
@@ -53,10 +67,18 @@ export default function DashboardPage() {
     const [alerts, setAlerts] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState("");
+
+    /**
+     * Clears credentials and redirects to the login screen on auth failures
+     */
     function handleUnauthorized() {
         removeToken();
         router.push("/login");
     }
+
+    /**
+     * Generates request headers containing the JWT token for API authorization
+     */
     function getAuthHeaders() {
         const token = getToken();
         if (!token) {
@@ -67,6 +89,10 @@ export default function DashboardPage() {
             Authorization: `Bearer ${token}`,
         };
     }
+
+    /**
+     * Retrieves credentials and details of the currently authenticated user
+     */
     async function fetchCurrentUser() {
         try {
             const headers = getAuthHeaders();
@@ -83,6 +109,10 @@ export default function DashboardPage() {
             handleUnauthorized();
         }
     }
+
+    /**
+     * Retrieves aggregated numerical stats for the dashboard summary cards
+     */
     async function fetchSummary() {
         try {
             const headers = getAuthHeaders();
@@ -99,6 +129,10 @@ export default function DashboardPage() {
             console.error("Failed to load summary", err);
         }
     }
+
+    /**
+     * Retrieves categorized lists of job follow-ups (overdue, today, and upcoming)
+     */
     async function fetchFollowUps() {
         try {
             const headers = getAuthHeaders();
@@ -129,6 +163,10 @@ export default function DashboardPage() {
             console.error("Failed to load follow-ups", err);
         }
     }
+
+    /**
+     * Retrieves scheduled interviews and filters for upcoming ones based on local time
+     */
     async function fetchUpcomingInterviews() {
         try {
             const headers = getAuthHeaders();
@@ -152,6 +190,9 @@ export default function DashboardPage() {
         }
     }
 
+    /**
+     * Retrieves active system alerts and notifications for the user
+     */
     async function fetchAlerts() {
         try {
             const headers = getAuthHeaders();
@@ -169,6 +210,9 @@ export default function DashboardPage() {
         }
     }
 
+    /**
+     * Bundles all fetch calls to refresh page contents concurrently
+     */
     async function refreshData() {
         const token = getToken();
         if (!token) {
@@ -191,6 +235,8 @@ export default function DashboardPage() {
             setLoading(false);
         }
     }
+
+    // Trigger dashboard data fetch on component mount
     useEffect(() => {
         refreshData();
     }, []);

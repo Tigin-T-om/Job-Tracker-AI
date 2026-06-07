@@ -1,3 +1,8 @@
+# ---------------------------------------------------------------------------
+# interviews.py - Interview scheduling CRUD API routes
+# Manages interview rounds linked to job applications. Supports creating,
+# listing, updating, and deleting interview entries.
+# ---------------------------------------------------------------------------
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from app.db.database import get_db
@@ -10,6 +15,7 @@ from app.schemas.interview import InterviewCreate, InterviewUpdate, InterviewRes
 router = APIRouter()
 
 def get_user_interview_or_404(interview_id: int, db: Session, current_user: User) -> Interview:
+    """Fetch an interview by ID, ensuring it belongs to the current user."""
     interview = (
         db.query(Interview)
         .filter(Interview.id == interview_id)
@@ -23,6 +29,7 @@ def get_user_interview_or_404(interview_id: int, db: Session, current_user: User
         )
     return interview
 
+# ---- Schedule a new interview round ----
 @router.post("/", response_model=InterviewResponse, status_code=status.HTTP_201_CREATED)
 def create_interview(
     interview_in: InterviewCreate,
@@ -51,6 +58,7 @@ def create_interview(
     db.refresh(new_interview)
     return new_interview
 
+# ---- List all interviews for the current user ----
 @router.get("/", response_model=list[InterviewResponse])
 def get_interviews(
     db: Session = Depends(get_db),
@@ -100,6 +108,7 @@ def get_interview(
 ):
     return get_user_interview_or_404(interview_id, db, current_user)
 
+# ---- Update an existing interview ----
 @router.put("/{interview_id}", response_model=InterviewResponse)
 def update_interview(
     interview_id: int,
@@ -117,6 +126,7 @@ def update_interview(
     db.refresh(interview)
     return interview
 
+# ---- Delete / cancel an interview ----
 @router.delete("/{interview_id}")
 def delete_interview(
     interview_id: int,

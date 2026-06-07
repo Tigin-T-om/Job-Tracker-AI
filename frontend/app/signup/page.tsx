@@ -1,8 +1,14 @@
+// ---------------------------------------------------------------------------
+// signup/page.tsx - User registration page
+// Collects name, email, password, and optional fields (mobile, age) to
+// create a new account via the backend /auth/signup endpoint.
+// ---------------------------------------------------------------------------
 "use client";
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { API_BASE_URL } from "@/lib/api";
+import { showToast } from "@/components/Toast";
 
 import Link from "next/link";
 
@@ -17,6 +23,7 @@ export default function SignupPage() {
     age: "",
   });
 
+  /** Register the new user account and redirect to the login page on success. */
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
 
@@ -32,11 +39,11 @@ export default function SignupPage() {
     });
 
     if (!res.ok) {
-      alert("Signup failed");
+      showToast("Signup failed", "error");
       return;
     }
 
-    alert("Account created successfully");
+    showToast("Account created successfully!", "success");
 
     router.push("/login");
   }

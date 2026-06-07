@@ -1,3 +1,9 @@
+# ---------------------------------------------------------------------------
+# ai.py - AI-powered feature routes
+# Provides endpoints for generating tailored cover letters using Google
+# Gemini. Extracts text from the user's uploaded resume PDF and sends
+# it along with a job description to the AI model.
+# ---------------------------------------------------------------------------
 import os
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
@@ -11,6 +17,7 @@ from app.services.ai import extract_text_from_pdf, generate_cover_letter_content
 
 router = APIRouter()
 
+# ---- Generate a tailored cover letter from resume + job description ----
 @router.post("/cover-letter", response_model=CoverLetterResponse)
 def generate_cover_letter(
     request_data: CoverLetterRequest,

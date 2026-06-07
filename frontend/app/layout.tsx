@@ -1,6 +1,12 @@
+// ---------------------------------------------------------------------------
+// layout.tsx - Root layout for the entire application
+// Configures global fonts (Bricolage Grotesque), metadata (SEO), and mounts
+// the global ToastContainer so notifications work on every page.
+// ---------------------------------------------------------------------------
 import type { Metadata } from "next";
-import { Bricolage_Grotesque, Geist_Mono } from "next/font/google"; // <-- Import Bricolage_Grotesque
+import { Bricolage_Grotesque, Geist_Mono } from "next/font/google";
 import "./globals.css";
+import ToastContainer from "@/components/Toast";
 
 // Configure Bricolage Grotesque (include weights from 300 to 800)
 const bricolageGrotesque = Bricolage_Grotesque({
@@ -29,7 +35,10 @@ export default function RootLayout({
       lang="en"
       className={`${bricolageGrotesque.variable} ${geistMono.variable} h-full antialiased`} // <-- Change variable here
     >
-      <body className="min-h-full flex flex-col">{children}</body>
+      <body className="min-h-full flex flex-col">
+        {children}
+        <ToastContainer />
+      </body>
     </html>
   );
 }

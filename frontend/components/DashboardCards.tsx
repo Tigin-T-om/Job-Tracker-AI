@@ -1,3 +1,8 @@
+// ---------------------------------------------------------------------------
+// DashboardCards.tsx - Dashboard summary cards component
+// Renders a grid of colour-coded stat cards showing the user's application
+// pipeline counts (total, applied, offers, rejected, follow-ups, etc.).
+// ---------------------------------------------------------------------------
 type DashboardSummary = {
   total_jobs: number;
   applied: number;
@@ -14,6 +19,7 @@ type DashboardSummary = {
   upcoming_follow_ups: number;
 };
 
+/** A single colour-coded stat card used in the dashboard grid. */
 function Card({
   title,
   value,

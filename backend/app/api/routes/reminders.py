@@ -1,3 +1,8 @@
+# ---------------------------------------------------------------------------
+# reminders.py - Alerts and email digest API routes
+# Generates contextual alerts (overdue follow-ups, inactive applications,
+# upcoming interviews) and can send an HTML email digest summary.
+# ---------------------------------------------------------------------------
 from datetime import date, datetime, timedelta
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
@@ -15,6 +20,7 @@ router = APIRouter()
 
 
 def get_active_alerts(db: Session, user_id: int) -> list[AlertResponse]:
+    """Scan the user's jobs and interviews to build a list of actionable alerts."""
     alerts = []
     today = date.today()
     now_dt = datetime.now()
@@ -100,6 +106,7 @@ def get_active_alerts(db: Session, user_id: int) -> list[AlertResponse]:
 
 
 def generate_alerts_html_digest(user_name: str, alerts: list[AlertResponse]) -> str:
+    """Build a styled HTML email body from the list of active alerts."""
     alert_items_html = ""
     for alert in alerts:
         color = "#3b82f6"  # blue for interviews
@@ -146,6 +153,7 @@ def generate_alerts_html_digest(user_name: str, alerts: list[AlertResponse]) -> 
     return html
 
 
+# ---- Get active alerts for the dashboard ----
 @router.get("/alerts", response_model=list[AlertResponse])
 def get_alerts(
     db: Session = Depends(get_db),
@@ -154,6 +162,7 @@ def get_alerts(
     return get_active_alerts(db, current_user.id)
 
 
+# ---- Send an email digest of all active alerts ----
 @router.post("/email-digest", response_model=EmailDigestResponse)
 def send_email_digest(
     db: Session = Depends(get_db),

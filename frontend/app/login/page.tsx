@@ -1,9 +1,16 @@
+// ---------------------------------------------------------------------------
+// login/page.tsx - User login page
+// Authenticates the user via email/password using the backend /auth/login
+// endpoint. On success, stores the JWT and redirects to the home page.
+// ---------------------------------------------------------------------------
 "use client";
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { API_BASE_URL } from "@/lib/api";
 import { saveToken } from "@/lib/auth";
+import { showToast } from "@/components/Toast";
+
 
 import Link from "next/link";
 
@@ -15,6 +22,7 @@ export default function LoginPage() {
     password: "",
   });
 
+  /** Send credentials to the backend and save the returned JWT. */
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
 
@@ -32,7 +40,7 @@ export default function LoginPage() {
     });
 
     if (!res.ok) {
-      alert("Login failed");
+      showToast("Login failed", "error");
       return;
     }
 

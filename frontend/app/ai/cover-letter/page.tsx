@@ -1,3 +1,10 @@
+// ---------------------------------------------------------------------------
+// File: ai/cover-letter/page.tsx
+// Description: AI Cover Letter Workspace. Retrieves uploaded resumes and takes a
+//              job description input to generate a tailored cover letter using the
+//              Gemini API, with copy, TXT export, and print/PDF options.
+// ---------------------------------------------------------------------------
+
 "use client";
 
 import { useEffect, useState } from "react";
@@ -6,12 +13,18 @@ import { API_BASE_URL } from "@/lib/api";
 import { getToken, removeToken } from "@/lib/auth";
 import Navbar from "@/components/Navbar";
 
+// Represents an uploaded resume entry from the database
 type Resume = {
   id: number;
   resume_name: string;
   filename: string;
 };
 
+/**
+ * AICoverLetterPage component.
+ * Manages selecting a resume version, pasting a target job description,
+ * requesting an AI-generated cover letter, and exporting the results.
+ */
 export default function AICoverLetterPage() {
   const router = useRouter();
   const [resumes, setResumes] = useState<Resume[]>([]);
@@ -21,15 +34,18 @@ export default function AICoverLetterPage() {
   const [coverLetter, setCoverLetter] = useState("");
   const [error, setError] = useState("");
   
-  // Interactive loading messages
+  // Rotating status message displayed while generating cover letter to enhance UX
   const [loadStatus, setLoadStatus] = useState("Extracting text from PDF...");
 
+  /**
+   * Clears local authentication state and routes user back to login screen
+   */
   function handleUnauthorized() {
     removeToken();
     router.push("/login");
   }
 
-  // Load the user's uploaded resumes from the backend on page load
+  // Load available resumes on component mount
   useEffect(() => {
     async function loadResumes() {
       const token = getToken();
@@ -55,7 +71,7 @@ export default function AICoverLetterPage() {
     loadResumes();
   }, []);
 
-  // Update loading status sequentially during generation to give an interactive feel
+  // Update visual loading messages sequentially to display generation progress
   useEffect(() => {
     if (!generating) return;
     const intervals = [
@@ -68,15 +84,17 @@ export default function AICoverLetterPage() {
     return () => intervals.forEach(clearTimeout);
   }, [generating]);
 
-  // Request the backend to generate the cover letter
+  /**
+   * Submits selected resume ID and target job description to backend for cover letter generation
+   */
   async function handleGenerate(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     if (!selectedResumeId) {
-      alert("Please select a resume version first.");
+      showToast("Please select a resume version first.", "warning");
       return;
     }
     if (!jobDescription.trim()) {
-      alert("Please paste a job description so the cover letter can be customized.");
+      showToast("Please paste a job description first.", "warning");
       return;
     }
 
@@ -120,14 +138,18 @@ export default function AICoverLetterPage() {
     }
   }
 
-  // Copy to clipboard helper
+  /**
+   * Copies the generated cover letter text to the user's system clipboard
+   */
   function handleCopy() {
     if (!coverLetter) return;
     navigator.clipboard.writeText(coverLetter);
-    alert("Cover letter copied to clipboard!");
+    showToast("Cover letter copied to clipboard!", "success");
   }
 
-  // Download as Plain Text (.txt) helper
+  /**
+   * Triggers browser download of the cover letter text as a plain text (.txt) file
+   */
   function handleDownloadTxt() {
     if (!coverLetter) return;
     const element = document.createElement("a");
@@ -139,16 +161,18 @@ export default function AICoverLetterPage() {
     document.body.removeChild(element);
   }
 
-  // Native Print / Save as PDF helper
+  /**
+   * Opens a printable window populated with formatted cover letter text to save as PDF or print
+   */
   function handlePrintPdf() {
     if (!coverLetter) return;
     const printWindow = window.open('about:blank', '_blank', 'width=800,height=600');
     if (!printWindow) {
-      alert("Popup blocked! Please allow popups to download/print the cover letter as PDF.");
+      showToast("Popup blocked! Please allow popups for PDF download.", "warning");
       return;
     }
     
-    // Safely parse text and convert newlines into HTML line breaks
+    // Convert text newlines into HTML line breaks and escape HTML brackets
     const escapedContent = coverLetter
       .replace(/&/g, "&amp;")
       .replace(/</g, "&lt;")

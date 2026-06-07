@@ -1,10 +1,22 @@
+# ---------------------------------------------------------------------------
+# storage.py - File storage abstraction layer
+# Provides a unified API for uploading, downloading, and deleting files.
+# Supports two providers:
+#   1. google_drive - stores files in the user's personal Google Drive
+#   2. local        - stores files on the server's local filesystem
+# Falls back to local storage if Google Drive credentials are missing.
+# ---------------------------------------------------------------------------
 import os
 from app.core.config import settings
 
 class StorageService:
+    """Unified file storage service with pluggable provider support."""
+
     def __init__(self):
-        self.provider = settings.storage_provider
+        self.provider = settings.storage_provider  # "google_drive" or "local"
     def _get_drive_service(self, user_id: int):
+        """Load saved OAuth credentials for a user and build a Drive API client.
+        Returns None if no credentials exist or they cannot be loaded."""
         """
         Loads the user-specific credentials file.
         """
@@ -28,7 +40,10 @@ class StorageService:
         except Exception as e:
             print(f"[Storage Service] Error loading Google OAuth credentials for user {user_id}: {e}")
             return None
+
     def _get_or_create_folder(self, service) -> str:
+        """Find or create a 'JobTrackerAI' folder in the user's Drive root.
+        All uploaded files are stored inside this folder for organisation."""
         try:
             query = "mimeType = 'application/vnd.google-apps.folder' and name = 'JobTrackerAI' and trashed = false"
             results = service.files().list(q=query, spaces='drive', fields='files(id, name)').execute()
@@ -44,7 +59,10 @@ class StorageService:
         except Exception as e:
             print(f"[Storage Service] Error creating folder: {e}")
             return ""
+
     def upload_file(self, file_content: bytes, filename: str, user_id: int, sub_dir: str = "uploads/resumes") -> str:
+        """Upload a file to the configured storage provider.
+        Returns a path string: 'google_drive:<fileId>' or a local filesystem path."""
         service = self._get_drive_service(user_id)
         if self.provider == "google_drive" and service:
             try:
@@ -63,7 +81,9 @@ class StorageService:
                 return self._save_locally(file_content, filename, sub_dir)
         else:
             return self._save_locally(file_content, filename, sub_dir)
+
     def _save_locally(self, file_content: bytes, filename: str, sub_dir: str) -> str:
+        """Save a file to the local filesystem with a unique timestamped name."""
         os.makedirs(sub_dir, exist_ok=True)
         import time
         file_ext = os.path.splitext(filename)[1]
@@ -72,7 +92,9 @@ class StorageService:
         with open(file_path, "wb") as buffer:
             buffer.write(file_content)
         return file_path
+
     def download_file(self, path_or_id: str, user_id: int) -> bytes:
+        """Download a file's raw bytes from Google Drive or local disk."""
         service = self._get_drive_service(user_id)
         if path_or_id.startswith("google_drive:") and service:
             try:
@@ -95,7 +117,9 @@ class StorageService:
                 raise FileNotFoundError(f"Local file not found at: {local_path}")
             with open(local_path, "rb") as f:
                 return f.read()
+
     def delete_file(self, path_or_id: str, user_id: int) -> None:
+        """Permanently delete a file from Google Drive or local disk."""
         service = self._get_drive_service(user_id)
         if path_or_id.startswith("google_drive:") and service:
             try:
@@ -111,4 +135,5 @@ class StorageService:
                 print(f"[Storage Service] Failed to delete local file: {e}")
 
 
+# Singleton instance used throughout the application
 storage_service = StorageService()

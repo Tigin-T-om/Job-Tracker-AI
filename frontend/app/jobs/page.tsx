@@ -1,3 +1,8 @@
+// ---------------------------------------------------------------------------
+// jobs/page.tsx - Job applications listing page
+// Displays all job applications in a filterable, searchable pipeline view.
+// Supports filtering by status, type (active/closed), and text search.
+// ---------------------------------------------------------------------------
 "use client";
 
 import { useEffect, useState } from "react";
@@ -5,6 +10,8 @@ import { useRouter } from "next/navigation";
 
 import { API_BASE_URL } from "@/lib/api";
 import { getToken, removeToken } from "@/lib/auth";
+import { showToast } from "@/components/Toast";
+
 
 import JobCard from "@/components/JobCard";
 import Navbar from "@/components/Navbar";
@@ -103,6 +110,7 @@ export default function JobsPage() {
     }
   }
 
+  /** Reload both user profile and jobs data simultaneously. */
   async function refreshData() {
     const token = getToken();
     if (!token) {
@@ -120,6 +128,7 @@ export default function JobsPage() {
     }
   }
 
+  /** Delete a job application with user confirmation. */
   async function handleDelete(jobId: number) {
     const confirmed = confirm("Delete this job?");
     if (!confirmed) return;
@@ -138,13 +147,13 @@ export default function JobsPage() {
         return;
       }
       if (!res.ok) {
-        alert("Failed to delete job");
+        showToast("Failed to delete job", "error");
         return;
       }
 
       await refreshData();
     } catch {
-      alert("Failed to delete job");
+      showToast("Failed to delete job", "error");
     }
   }
 
@@ -164,6 +173,7 @@ export default function JobsPage() {
 
   const finishedStatuses = ["Offer Received", "Rejected"];
 
+  // Apply search and filter criteria to the jobs list
   const filteredJobs = jobs.filter((job) => {
     const matchesSearch =
       job.company_name.toLowerCase().includes(searchTerm.toLowerCase()) ||

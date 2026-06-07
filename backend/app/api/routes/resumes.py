@@ -1,3 +1,9 @@
+# ---------------------------------------------------------------------------
+# resumes.py - Resume Repository API routes
+# Manages the user's central resume repository. Supports uploading new
+# versions, listing with performance stats, viewing/deleting files,
+# and running AI-powered resume analysis via Gemini.
+# ---------------------------------------------------------------------------
 import io
 import os
 import shutil
@@ -17,6 +23,7 @@ from app.services.storage import storage_service
 
 router = APIRouter()
 
+# ---- Upload a new resume version to the repository ----
 @router.post("/", response_model=ResumeResponse)
 def upload_resume_version(
     resume_name: str = Form(...),
@@ -40,6 +47,7 @@ def upload_resume_version(
     db.refresh(new_resume)
     return new_resume
 
+# ---- List all resumes with performance statistics ----
 @router.get("/", response_model=list[ResumeStatsResponse])
 def get_resumes_with_stats(
     db: Session = Depends(get_db),
@@ -92,6 +100,7 @@ def get_resumes_with_stats(
         
     return stats
 
+# ---- View / preview a resume document ----
 @router.get("/{resume_id}/view")
 def view_resume_file(
     resume_id: int,
@@ -117,6 +126,7 @@ def view_resume_file(
             raise HTTPException(status_code=404, detail="Physical file not found on disk")
         return FileResponse(path=resume.file_path)
 
+# ---- Delete a resume version and unlink from all applications ----
 @router.delete("/{resume_id}")
 def delete_resume_file(
     resume_id: int,

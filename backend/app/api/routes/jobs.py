@@ -1,3 +1,9 @@
+# ---------------------------------------------------------------------------
+# jobs.py - Job application CRUD API routes
+# Provides endpoints for creating, reading, updating, and deleting job
+# applications. Also includes dashboard summary, follow-up tracking,
+# resume upload/download, and status change history.
+# ---------------------------------------------------------------------------
 import io, os
 import shutil
 from datetime import date, timedelta
@@ -31,6 +37,7 @@ def get_user_job_or_404(
     db: Session,
     current_user: User,
 ) -> Job:
+    """Fetch a job by ID, ensuring it belongs to the current user. Returns 404 otherwise."""
     job = (
         db.query(Job)
         .filter(Job.id == job_id)
@@ -44,6 +51,7 @@ def get_user_job_or_404(
     return job
 
 
+# ---- Create a new job application ----
 @router.post("/", response_model=JobResponse)
 def create_job(
     job: JobCreate,
@@ -62,6 +70,7 @@ def create_job(
     return new_job
 
 
+# ---- List all jobs for the current user (newest first) ----
 @router.get("/", response_model=list[JobResponse])
 def get_jobs(
     db: Session = Depends(get_db),
@@ -77,6 +86,7 @@ def get_jobs(
     return jobs
 
 
+# ---- Follow-up tracking: overdue, today, and upcoming ----
 @router.get("/follow-ups/overdue", response_model=list[JobResponse])
 def get_overdue_follow_ups(
     db: Session = Depends(get_db),
@@ -139,6 +149,7 @@ def get_upcoming_follow_ups(
     return jobs
 
 
+# ---- Dashboard summary endpoint ----
 @router.get("/dashboard/summary", response_model=JobDashboardSummary)
 def get_dashboard_summary(
     db: Session = Depends(get_db),
@@ -244,6 +255,7 @@ def get_interview_stage_jobs(
     return jobs
 
 
+# ---- Upload a resume file directly to a specific job (legacy) ----
 @router.post("/{job_id}/resume", response_model=JobResponse)
 def upload_resume(
     job_id: int,
@@ -328,6 +340,7 @@ def get_job(
     return job
 
 
+# ---- Update a job and record status changes in the audit log ----
 @router.put("/{job_id}", response_model=JobResponse)
 def update_job(
     job_id: int,
@@ -375,6 +388,7 @@ def get_job_status_history(
     return history
 
 
+# ---- Permanently delete a job application ----
 @router.delete("/{job_id}")
 def delete_job(
     job_id: int,

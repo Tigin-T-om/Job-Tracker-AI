@@ -1,3 +1,8 @@
+// ---------------------------------------------------------------------------
+// AddJobForm.tsx - New job application form component
+// Renders a form for creating a new job entry. Allows the user to either
+// select an existing resume from the repository or upload a new one inline.
+// ---------------------------------------------------------------------------
 "use client";
 
 import { useEffect, useState } from "react";
@@ -5,6 +10,8 @@ import { useRouter } from "next/navigation";
 
 import { API_BASE_URL } from "@/lib/api";
 import { getToken } from "@/lib/auth";
+import { showToast } from "@/components/Toast";
+
 
 export default function AddJobForm() {
   const router = useRouter();
@@ -52,12 +59,13 @@ export default function AddJobForm() {
     loadResumes();
   }, []);
 
+  /** Handle form submission: upload new resume if needed, then create the job. */
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
 
     const token = getToken();
     if (!token) {
-      alert("Please login first");
+      showToast("Please login first", "warning");
       return;
     }
 
@@ -82,11 +90,11 @@ export default function AddJobForm() {
           const uploadResult = await uploadRes.json();
           resumeIdToLink = uploadResult.id; // Assign the newly uploaded resume's ID to this job!
         } else {
-          alert("Failed to upload resume to repository. Creating job application without it.");
+          showToast("Failed to upload resume. Creating job without it.", "error");
         }
       } catch (err) {
         console.error("Error uploading resume", err);
-        alert("Failed to upload resume to repository. Creating job application without it.");
+        showToast("Failed to upload resume. Creating job without it.", "error");
       }
     }
 
@@ -106,11 +114,11 @@ export default function AddJobForm() {
     });
 
     if (!res.ok) {
-      alert("Failed to create job");
+      showToast("Failed to create job", "error");
       return;
     }
 
-    alert("Job added successfully");
+    showToast("Job added successfully", "success");
 
     setFormData({
       company_name: "",
@@ -132,6 +140,7 @@ export default function AddJobForm() {
     router.push("/jobs");
   }
 
+  /** Generic change handler for all form inputs. */
   function handleChange(
     e: React.ChangeEvent<
       HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement

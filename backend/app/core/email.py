@@ -1,3 +1,8 @@
+# ---------------------------------------------------------------------------
+# email.py - Email dispatch service
+# Sends HTML emails via SMTP. Falls back to a console-printed mock email
+# if SMTP credentials are not configured in the .env file.
+# ---------------------------------------------------------------------------
 import os
 import smtplib
 from email.mime.text import MIMEText

@@ -1,3 +1,8 @@
+// ---------------------------------------------------------------------------
+// Navbar.tsx - Main navigation bar component
+// Renders the application logo, navigation links, and logout button.
+// Highlights the active page link using the current URL path.
+// ---------------------------------------------------------------------------
 "use client";
 
 import Link from "next/link";
@@ -8,13 +13,16 @@ export default function Navbar() {
   const router = useRouter();
   const pathname = usePathname();
 
+  /** Clear the JWT and redirect to the login page. */
   function handleLogout() {
     removeToken();
     router.push("/login");
   }
 
+  /** Check if a given path matches the current URL. */
   const isActive = (path: string) => pathname === path;
 
+  // Navigation link definitions - add new pages here
   const navLinks = [
     { href: "/dashboard", label: "Dashboard" },
     { href: "/jobs", label: "Applications" },

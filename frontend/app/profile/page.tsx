@@ -1,3 +1,8 @@
+// ---------------------------------------------------------------------------
+// profile/page.tsx - User profile and resume repository page
+// Displays the user's account info, resume repository with performance stats,
+// upload form for new resume versions, and Google Drive integration.
+// ---------------------------------------------------------------------------
 "use client";
 
 import { useEffect, useState } from "react";
@@ -5,6 +10,8 @@ import { useRouter } from "next/navigation";
 import { API_BASE_URL } from "@/lib/api";
 import { getToken, removeToken } from "@/lib/auth";
 import Navbar from "@/components/Navbar";
+import { showToast } from "@/components/Toast";
+
 
 type Resume = {
   id: number;
@@ -29,17 +36,31 @@ export default function ProfilePage() {
   const [resumes, setResumes] = useState<Resume[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [googleConnected, setGoogleConnected] = useState(false);
 
   // Upload Form states
   const [resumeName, setResumeName] = useState("");
   const [resumeFile, setResumeFile] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
 
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("google_connected") === "true") {
+      setGoogleConnected(true);
+      showToast("Successfully connected to Google Drive!", "success");
+      // Clean up the URL query params
+      router.replace("/profile");
+    }
+  }, [router]);
+
+
+  /** Clear auth and redirect to login on 401 responses. */
   function handleUnauthorized() {
     removeToken();
     router.push("/login");
   }
 
+  /** Build the Authorization header, redirecting if no token exists. */
   function getAuthHeaders() {
     const token = getToken();
     if (!token) {
@@ -51,6 +72,7 @@ export default function ProfilePage() {
     };
   }
 
+  /** Load user profile data and resume repository from the backend. */
   async function fetchProfileData() {
     try {
       setLoading(true);
@@ -92,14 +114,15 @@ export default function ProfilePage() {
     fetchProfileData();
   }, []);
 
+  /** Upload a new resume version file to the repository. */
   async function handleUpload(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     if (!resumeName.trim()) {
-      alert("Please enter a resume version name.");
+      showToast("Please enter a resume version name.", "warning");
       return;
     }
     if (!resumeFile) {
-      alert("Please select a file to upload.");
+      showToast("Please select a file to upload.", "warning");
       return;
     }
 
@@ -135,10 +158,10 @@ export default function ProfilePage() {
         throw new Error("Upload failed");
       }
 
-      alert("Resume uploaded to repository successfully!");
+      showToast("Resume uploaded successfully!", "success");
       setResumeName("");
       setResumeFile(null);
-      
+
       // Reset input files in UI
       const fileInput = document.getElementById("resume-file-input") as HTMLInputElement;
       if (fileInput) fileInput.value = "";
@@ -146,13 +169,14 @@ export default function ProfilePage() {
       // Refresh data
       fetchProfileData();
     } catch (err) {
-      alert("Failed to upload resume. Make sure it's a valid PDF/Doc file.");
+      showToast("Failed to upload resume. Make sure it's a valid PDF/Doc file.", "error");
       console.error(err);
     } finally {
       setUploading(false);
     }
   }
 
+  /** Open a resume document in a new browser tab for preview. */
   async function handleViewResume(resumeId: number) {
     const token = getToken();
     if (!token) return;
@@ -165,7 +189,7 @@ export default function ProfilePage() {
       });
 
       if (!res.ok) {
-        alert("Could not load resume document.");
+        showToast("Could not load resume document.", "error");
         return;
       }
 
@@ -177,6 +201,7 @@ export default function ProfilePage() {
     }
   }
 
+  /** Delete a resume version from the repository (with confirmation). */
   async function handleDeleteResume(resumeId: number) {
     const confirmed = confirm("Are you sure you want to delete this resume version? This will unlink it from any applications.");
     if (!confirmed) return;
@@ -193,16 +218,37 @@ export default function ProfilePage() {
       });
 
       if (!res.ok) {
-        alert("Failed to delete resume.");
+        showToast("Failed to delete resume.", "error");
         return;
       }
 
-      alert("Resume deleted successfully.");
+      showToast("Resume deleted successfully!", "success");
       fetchProfileData();
     } catch (err) {
       console.error("Error deleting resume:", err);
     }
   }
+
+  /** Initiate Google OAuth flow to connect the user's Google Drive. */
+  async function handleGoogleConnect() {
+    const token = getToken();
+    if (!token) return;
+    try {
+      const res = await fetch(`${API_BASE_URL}/auth/google/login-url`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (res.ok) {
+        const data = await res.json();
+        // Redirect user to Google authorization screen
+        window.location.href = data.url;
+      } else {
+        showToast("Failed to initialize Google login link.", "error");
+      }
+    } catch (err) {
+      console.error("OAuth connection failed", err);
+    }
+  }
+
 
   return (
     <main className="min-h-screen bg-gray-50 px-4 py-8 md:px-8">
@@ -260,6 +306,20 @@ export default function ProfilePage() {
                       </span>
                     </div>
                   </div>
+                </div>
+                <div className="mt-6 pt-6 border-t border-gray-100">
+                  <h4 className="text-xs font-semibold uppercase tracking-wider text-gray-400">Integrations</h4>
+                  <button
+                    onClick={handleGoogleConnect}
+                    className="mt-3 w-full inline-flex justify-center items-center gap-2 rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50 transition cursor-pointer"
+                  >
+                    <span>🤖</span> Connect Google Drive
+                  </button>
+                  {googleConnected && (
+                    <p className="text-xs text-green-600 mt-2 font-medium flex items-center gap-1">
+                      <span>✅</span> Connected to Personal Drive
+                    </p>
+                  )}
                 </div>
               </div>
             </div>

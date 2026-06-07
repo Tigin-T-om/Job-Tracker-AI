@@ -1,3 +1,8 @@
+// ---------------------------------------------------------------------------
+// interviews/page.tsx - Interviews management page
+// Displays all scheduled interviews split into two columns: upcoming rounds
+// and past/completed rounds. Supports cancelling/deleting entries.
+// ---------------------------------------------------------------------------
 "use client";
 
 import { useEffect, useState } from "react";
@@ -94,14 +99,14 @@ export default function InterviewsPage() {
         return;
       }
       if (!res.ok) {
-        alert("Failed to delete interview");
+        showToast("Failed to delete interview", "error");
         return;
       }
 
       // Refresh list
       fetchInterviews();
     } catch {
-      alert("Failed to delete interview");
+      showToast("Failed to delete interview", "error");
     }
   }
 

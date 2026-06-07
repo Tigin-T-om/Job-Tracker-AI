@@ -1,3 +1,9 @@
+// ---------------------------------------------------------------------------
+// ai/resume-analysis/page.tsx - AI resume analysis workspace
+// Allows users to select a resume from their repository, paste a job
+// description, and run an AI-powered ATS audit via Google Gemini.
+// Displays scores, missing keywords, skills gaps, and interview prep questions.
+// ---------------------------------------------------------------------------
 "use client";
 
 import { useEffect, useState } from "react";
@@ -78,7 +84,7 @@ export default function AIResumeAnalysisPage() {
   async function handleAnalyze(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     if (!selectedResumeId) {
-      alert("Please select a resume version first.");
+      showToast("Please select a resume version first.", "warning");
       return;
     }
 
@@ -122,6 +128,7 @@ export default function AIResumeAnalysisPage() {
   }
 
   // Helper to color-code scores
+  /** Map a numeric score to a colour class for visual feedback. */
   const getScoreColor = (score: number) => {
     if (score >= 80) return "text-emerald-500 stroke-emerald-500 bg-emerald-50 border-emerald-100";
     if (score >= 50) return "text-amber-500 stroke-amber-500 bg-amber-50 border-amber-100";

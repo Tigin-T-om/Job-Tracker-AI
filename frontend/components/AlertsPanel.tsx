@@ -1,8 +1,15 @@
+// ---------------------------------------------------------------------------
+// AlertsPanel.tsx - Notifications and alerts panel component
+// Displays overdue follow-ups, upcoming interviews, and inactive application
+// alerts. Includes a button to send an email digest of all active alerts.
+// ---------------------------------------------------------------------------
 "use client";
 
 import { useState } from "react";
 import { API_BASE_URL } from "@/lib/api";
 import { getToken } from "@/lib/auth";
+import { showToast } from "@/components/Toast";
+
 
 type AlertItem = {
   id: string;
@@ -22,6 +29,7 @@ export default function AlertsPanel({ alerts, onRefresh }: AlertsPanelProps) {
   const [emailLoading, setEmailLoading] = useState(false);
   const [emailStatus, setEmailStatus] = useState("");
 
+  /** Send all current alerts as an HTML email to the user's registered address. */
   async function handleSendEmailDigest() {
     setEmailLoading(true);
     setEmailStatus("");
@@ -47,7 +55,7 @@ export default function AlertsPanel({ alerts, onRefresh }: AlertsPanelProps) {
 
       const data = await res.json();
       setEmailStatus("Digest emailed successfully!");
-      alert(`Digest sent to: ${data.recipient}`);
+      showToast(`Digest sent to: ${data.recipient}`, "success");
     } catch {
       setEmailStatus("Failed to send email digest");
     } finally {

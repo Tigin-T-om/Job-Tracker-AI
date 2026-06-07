@@ -1,3 +1,9 @@
+# ---------------------------------------------------------------------------
+# resume.py - Resume version database model
+# Represents a single uploaded resume file in the user's Resume Repository.
+# One resume version can be linked to many job applications, enabling
+# performance tracking (callback rate, interview count) per version.
+# ---------------------------------------------------------------------------
 from sqlalchemy import Column, Integer, String, DateTime, ForeignKey
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
