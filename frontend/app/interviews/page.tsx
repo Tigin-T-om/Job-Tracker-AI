@@ -11,6 +11,7 @@ import { useRouter } from "next/navigation";
 import { API_BASE_URL } from "@/lib/api";
 import { getToken, removeToken } from "@/lib/auth";
 import Navbar from "@/components/Navbar";
+import { showToast } from "@/components/Toast";
 
 type JobMinInfo = {
   id: number;
