@@ -1,0 +1,26 @@
+name: Deploy to Hugging Face Spaces
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
+      - name: Push to Hugging Face
+        env:
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
+        run: |
+          # Configure Git credentials
+          git config --global user.email "deploy@github.com"
+          git config --global user.name "GitHub Action"
+          
+          # Force push the backend directory to Hugging Face Space repository
+          # Replace 'Tigin-T-om' and 'job-tracker-backend' with your actual HF username and Space name
+          git push --force https://Tigin-T-om:$HF_TOKEN@huggingface.co/spaces/Tigin-T-om/job-tracker-backend main
