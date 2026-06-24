@@ -1,3 +1,13 @@
+---
+title: Job Tracker Backend
+emoji: 💼
+colorFrom: blue
+colorTo: indigo
+sdk: docker
+app_port: 7860
+pinned: false
+---
+
 # Job Tracker Application
 
 An AI - powered job application to manage job applications, track statuses, schedule reminders, and support future AI features like resume job matching and interview preparation.

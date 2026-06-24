@@ -23,4 +23,5 @@ jobs:
           
           # Force push the backend directory to Hugging Face Space repository
           # Replace 'Tigin-T-om' and 'job-tracker-backend' with your actual HF username and Space name
-          git push --force https://Tigin-T-om:$HF_TOKEN@huggingface.co/spaces/Tigin-T-om/job-tracker-backend main
+          git push --force https://tigintom158:$HF_TOKEN@huggingface.co/spaces/tigintom158/job-tracker-backend HEAD:main
+
