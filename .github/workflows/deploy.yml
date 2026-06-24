@@ -13,15 +13,24 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Push to Hugging Face
+      - name: Push Backend to Hugging Face
         env:
           HF_TOKEN: ${{ secrets.HF_TOKEN }}
         run: |
-          # Configure Git credentials
+          # 1. Copy the README with the metadata header into the backend folder
+          cp README.md backend/README.md
+          
+          # 2. Navigate into the backend folder
+          cd backend
+          
+          # 3. Initialize a temporary git repository inside 'backend'
+          git init
           git config --global user.email "deploy@github.com"
           git config --global user.name "GitHub Action"
           
-          # Force push the backend directory to Hugging Face Space repository
-          # Replace 'Tigin-T-om' and 'job-tracker-backend' with your actual HF username and Space name
+          # 4. Commit all files inside the backend folder
+          git add .
+          git commit -m "deploy backend files to space root"
+          
+          # 5. Force push only this folder's contents as the 'main' branch on Hugging Face
           git push --force https://tigintom158:$HF_TOKEN@huggingface.co/spaces/tigintom158/job-tracker-backend HEAD:main
-
