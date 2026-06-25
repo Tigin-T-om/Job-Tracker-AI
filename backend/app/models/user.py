@@ -18,4 +18,5 @@ class User(Base):
     mobile_number = Column(String, nullable=True)  # Optional contact number
     age = Column(Integer, nullable=True)  # Optional age field
     hashed_password = Column(String, nullable=False)  # Bcrypt hash, never stored plaintext
+    google_token = Column(String, nullable=True)  # Store serialized Google OAuth credentials
     created_at = Column(DateTime(timezone=True), server_default=func.now())  # Auto-set on creation

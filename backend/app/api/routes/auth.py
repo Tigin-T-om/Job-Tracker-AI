@@ -114,7 +114,7 @@ def get_google_login_url(current_user: User = Depends(get_current_user)):
 
 # ---- Google OAuth: Step 2 - Handle Callback ----
 @router.get("/google/callback")
-def google_callback(code: str, state: str):
+def google_callback(code: str, state: str, db: Session = Depends(get_db)):
     """Google redirects here after the user grants permission.
     Exchanges the authorization code for access/refresh tokens and saves them."""
     import sys
@@ -181,9 +181,25 @@ def google_callback(code: str, state: str):
         client_secret=settings.google_client_secret,                        # Our app's secret
         scopes=["https://www.googleapis.com/auth/drive.file"]               # What permissions we have
     )
-    token_path = f"google_drive_token_user_{user_id}.json"
-    with open(token_path, "w") as f:
-        f.write(creds.to_json())
-    print(f"SUCCESS! Token saved to: {token_path}", file=sys.stderr)
+    # Update the user's google_token in the database
+    user = db.query(User).filter(User.id == int(user_id)).first()
+    if user:
+        user.google_token = creds.to_json()
+        db.commit()
+        print(f"SUCCESS! Token saved to database for user: {user_id}", file=sys.stderr)
+    else:
+        print(f"ERROR: User {user_id} not found in database to save token!", file=sys.stderr)
     print(f"---------------------------\n", file=sys.stderr)
     return RedirectResponse(url=f"{settings.frontend_url}/profile?google_connected=true")
+
+
+# ---- Google OAuth: Step 3 - Connection Status ----
+@router.get("/google/status")
+def get_google_status(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Check if the user has a valid Google Drive integration connection."""
+    from app.services.storage import storage_service
+    service = storage_service._get_drive_service(current_user.id)
+    return {"connected": service is not None}

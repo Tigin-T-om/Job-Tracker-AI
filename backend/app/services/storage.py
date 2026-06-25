@@ -15,31 +15,38 @@ class StorageService:
     def __init__(self):
         self.provider = settings.storage_provider  # "google_drive" or "local"
     def _get_drive_service(self, user_id: int):
-        """Load saved OAuth credentials for a user and build a Drive API client.
+        """Load saved OAuth credentials for a user from database and build a Drive API client.
         Returns None if no credentials exist or they cannot be loaded."""
-        """
-        Loads the user-specific credentials file.
-        """
-        token_path = f"google_drive_token_user_{user_id}.json"
-        if not os.path.exists(token_path):
-            return None
+        from app.db.database import SessionLocal
+        from app.models.user import User
+        import json
+
+        db = SessionLocal()
         try:
+            user = db.query(User).filter(User.id == user_id).first()
+            if not user or not user.google_token:
+                return None
+
             from google.oauth2.credentials import Credentials
             from google.auth.transport.requests import Request
             from googleapiclient.discovery import build
-            creds = Credentials.from_authorized_user_file(
-                token_path, 
+
+            token_info = json.loads(user.google_token)
+            creds = Credentials.from_authorized_user_info(
+                token_info, 
                 scopes=["https://www.googleapis.com/auth/drive.file"]
             )
-            # Refresh token for this specific user
+            # Refresh token for this specific user if expired
             if creds and creds.expired and creds.refresh_token:
                 creds.refresh(Request())
-                with open(token_path, "w") as f:
-                    f.write(creds.to_json())
+                user.google_token = creds.to_json()
+                db.commit()
             return build("drive", "v3", credentials=creds)
         except Exception as e:
             print(f"[Storage Service] Error loading Google OAuth credentials for user {user_id}: {e}")
             return None
+        finally:
+            db.close()
 
     def _get_or_create_folder(self, service) -> str:
         """Find or create a 'JobTrackerAI' folder in the user's Drive root.

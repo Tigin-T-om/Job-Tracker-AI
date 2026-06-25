@@ -15,7 +15,7 @@ class Settings(BaseSettings):
     # JWT authentication settings
     secret_key: str  # Used to sign and verify JSON Web Tokens
     algorithm: str = "HS256"  # JWT signing algorithm
-    access_token_expire_minutes: int = 60
+    access_token_expire_minutes: int = 10080
 
     # Google Gemini AI key for resume analysis and cover letter generation
     gemini_api_key: str = ""

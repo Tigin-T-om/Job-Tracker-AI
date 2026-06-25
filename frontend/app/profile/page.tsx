@@ -46,8 +46,12 @@ export default function ProfilePage() {
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     if (params.get("google_connected") === "true") {
-      setGoogleConnected(true);
-      showToast("Successfully connected to Google Drive!", "success");
+      const hasShown = sessionStorage.getItem("google_connected_toast_shown");
+      if (!hasShown) {
+        setGoogleConnected(true);
+        showToast("Successfully connected to Google Drive!", "success");
+        sessionStorage.setItem("google_connected_toast_shown", "true");
+      }
       // Clean up the URL query params
       router.replace("/profile");
     }
@@ -99,6 +103,13 @@ export default function ProfilePage() {
         setCurrentUser(userData);
         setResumes(resumesData);
         setError("");
+
+        // 3. Fetch Google integration status
+        const googleRes = await fetch(`${API_BASE_URL}/auth/google/status`, { headers });
+        if (googleRes.ok) {
+          const googleData = await googleRes.json();
+          setGoogleConnected(googleData.connected);
+        }
       } else {
         setError("Failed to fetch profile and resumes details");
       }
@@ -234,6 +245,8 @@ export default function ProfilePage() {
     const token = getToken();
     if (!token) return;
     try {
+      // Clear toast flag so the toast can trigger again after redirect callback
+      sessionStorage.removeItem("google_connected_toast_shown");
       const res = await fetch(`${API_BASE_URL}/auth/google/login-url`, {
         headers: { Authorization: `Bearer ${token}` }
       });
