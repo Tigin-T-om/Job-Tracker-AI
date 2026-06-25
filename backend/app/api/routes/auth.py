@@ -186,4 +186,4 @@ def google_callback(code: str, state: str):
         f.write(creds.to_json())
     print(f"SUCCESS! Token saved to: {token_path}", file=sys.stderr)
     print(f"---------------------------\n", file=sys.stderr)
-    return RedirectResponse(url="http://localhost:3000/profile?google_connected=true")
+    return RedirectResponse(url=f"{settings.frontend_url}/profile?google_connected=true")

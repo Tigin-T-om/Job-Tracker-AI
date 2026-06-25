@@ -10,6 +10,7 @@ class Settings(BaseSettings):
     app_name: str = "Job Tracker AI"
     debug: bool = True
     database_url: str  # SQLite or PostgreSQL connection string
+    frontend_url: str = "http://localhost:3000"
 
     # JWT authentication settings
     secret_key: str  # Used to sign and verify JSON Web Tokens
