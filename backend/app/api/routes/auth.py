@@ -3,12 +3,12 @@
 # Handles user signup, login (JWT issuance), current-user lookup, and
 # Google OAuth 2.0 flow for connecting the user's Google Drive account.
 # ---------------------------------------------------------------------------
-from requests import status_codes
+import secrets
 import os
 
 os.environ["OAUTHLIB_INSECURE_TRANSPORT"] = "1"  # Allow HTTP for local dev OAuth
 
-import random
+import secrets
 from datetime import datetime, timedelta, timezone
 from app.core.config import settings
 
@@ -255,7 +255,7 @@ def forgot_password(payload: ForgotPasswordRequest, db: Session = Depends(get_db
         }
 
     # Generate 6-digit OTP
-    otp_code = f"{random.randint(100000, 999999)}"
+    otp_code = str(secrets.randbelow(900000) + 100000)
 
     # Hash the OTP using Bcrypt
     hashed_otp = hash_password(otp_code)
@@ -299,7 +299,7 @@ def verify_otp(payload: VerifyOTPRequest, db: Session = Depends(get_db)):
     # Get the latest active (unverified) OTP for this user
     otp_record = (
         db.query(UserOTP)
-        .filter(UserOTP.user_id == user.id, UserOTP.is_verified == False)
+        .filter(UserOTP.user_id == user.id, UserOTP.is_verified.is_(False))
         .order_by(UserOTP.created_at.desc())
         .first()
     )
