@@ -4,6 +4,7 @@
 #              user detail responses, and OAuth2 JWT authentication tokens.
 # ---------------------------------------------------------------------------
 
+# pyrefly: ignore [missing-import]
 from pydantic import BaseModel, EmailStr
 from typing import Optional
 
@@ -43,3 +44,24 @@ class Token(BaseModel):
     """
     access_token: str
     token_type: str
+
+class ForgotPasswordRequest(BaseModel):
+    """
+    Schema for forgot password request containing user email.
+    """
+    email: EmailStr
+
+class VerifyOTPRequest(BaseModel):
+    """
+    Schema for verify the generated OTP.
+    """
+    email: EmailStr
+    otp: str
+
+class ResetPasswordRequest(BaseModel):
+    """
+    Schema for updating the user password using OTP verification.
+    """
+    email: EmailStr
+    otp: str
+    new_password: str
