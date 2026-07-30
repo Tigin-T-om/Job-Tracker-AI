@@ -1,6 +1,8 @@
 from logging.config import fileConfig
 
+# pyrefly: ignore [missing-import]
 from sqlalchemy import engine_from_config
+# pyrefly: ignore [missing-import]
 from sqlalchemy import pool
 
 from alembic import context
@@ -12,6 +14,7 @@ from app.models.job_status_history import JobStatusHistory
 from app.models.user import User
 from app.models.interview import Interview
 from app.models.resume import Resume
+from app.models.user_otp import UserOTP
 
 # this is the Alembic Config object, which provides 
 # access to the values within the .ini file in use.

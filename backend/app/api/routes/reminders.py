@@ -4,7 +4,11 @@
 # upcoming interviews) and can send an HTML email digest summary.
 # ---------------------------------------------------------------------------
 from datetime import date, datetime, timedelta
+
+# pyrefly: ignore[missing-import]
 from fastapi import APIRouter, Depends, HTTPException, status
+
+# pyrefly: ignore[missing-import]
 from sqlalchemy.orm import Session
 
 from app.constants.job_status import ACTIVE_JOB_STATUSES
@@ -55,7 +59,7 @@ def get_active_alerts(db: Session, user_id: int) -> list[AlertResponse]:
                 )
 
         # Check inactivity (No updates in >= 10 days)
-        if job.updated_at:
+        if job.follow_up_date and job.updated_at:
             updated_date = job.updated_at.date()
             days_inactive = (today - updated_date).days
             if days_inactive >= 10:
@@ -82,12 +86,14 @@ def get_active_alerts(db: Session, user_id: int) -> list[AlertResponse]:
 
     for interview in upcoming_interviews:
         # Time calculations
-        time_diff = interview.interview_date.replace(tzinfo=None) - now_dt.replace(tzinfo=None)
+        time_diff = interview.interview_date.replace(tzinfo=None) - now_dt.replace(
+            tzinfo=None
+        )
         days_until = time_diff.days
-        
+
         time_str = interview.interview_date.strftime("%I:%M %p")
         date_str = interview.interview_date.strftime("%A, %b %d")
-        
+
         company = interview.job.company_name if interview.job else "Company"
         role = interview.job.role if interview.job else "Position"
 
@@ -114,7 +120,7 @@ def generate_alerts_html_digest(user_name: str, alerts: list[AlertResponse]) -> 
             color = "#ef4444"  # red for followup
         elif alert.type == "inactive":
             color = "#f59e0b"  # orange for inactive
-            
+
         alert_items_html += f"""
         <div style="border-left: 4px solid {color}; padding: 12px; margin-bottom: 12px; background-color: #f8fafc; border-radius: 4px;">
             <strong style="color: #1e293b; font-size: 16px;">{alert.title}</strong>
@@ -170,22 +176,22 @@ def send_email_digest(
 ):
     alerts = get_active_alerts(db, current_user.id)
     email_html = generate_alerts_html_digest(current_user.name, alerts)
-    
+
     subject = f"JobTracker.AI Reminders Summary - {len(alerts)} items pending"
     if not alerts:
         subject = "JobTracker.AI Digest - All clear!"
 
     success = send_html_email(current_user.email, subject, email_html)
-    
+
     if not success:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Failed to send email digest"
+            detail="Failed to send email digest",
         )
-        
+
     return EmailDigestResponse(
         success=True,
         message="Email digest dispatched successfully",
         recipient=current_user.email,
-        alert_count=len(alerts)
+        alert_count=len(alerts),
     )
