@@ -1,7 +1,9 @@
 # ---------------------------------------------------------------------------
 # email.py - Email dispatch service
-# Sends HTML emails via SMTP. Falls back to a console-printed mock email
-# if SMTP credentials are not configured in the .env file.
+# Supports:
+#   1. Resend REST API (over HTTPS port 443 - works on Hugging Face Spaces)
+#   2. Standard SMTP (for environments where port 587 is unblocked)
+#   3. Console log fallback (prints OTP to logs if network is blocked)
 # ---------------------------------------------------------------------------
 import os
 import smtplib
@@ -24,11 +26,14 @@ RESEND_API_KEY = os.getenv("RESEND_API_KEY")
 def _send_via_resend(api_key: str, to_email: str, subject: str, html_body: str) -> bool:
     """Send email via Resend REST API over HTTPS (Port 443 - works on Hugging Face Spaces)."""
     try:
-        from_addr = (
-            EMAIL_FROM
-            if ("@" in EMAIL_FROM and not EMAIL_FROM.endswith("@jobtracker.ai"))
-            else "onboarding@resend.dev"
-        )
+        # Resend rejects public email domains like @gmail.com.
+        # It requires 'onboarding@resend.dev' unless you have a verified custom domain.
+        resend_from = os.getenv("RESEND_FROM_EMAIL")
+        if resend_from and not any(resend_from.endswith(d) for d in ("@gmail.com", "@yahoo.com", "@outlook.com", "@hotmail.com")):
+            from_addr = resend_from
+        else:
+            from_addr = "onboarding@resend.dev"
+
         response = requests.post(
             "https://api.resend.com/emails",
             headers={
