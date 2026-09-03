@@ -1,8 +1,3 @@
-# ---------------------------------------------------------------------------
-# config.py - Centralised application configuration
-# Uses pydantic-settings to load values from the .env file automatically.
-# Each attribute maps to an environment variable of the same name.
-# ---------------------------------------------------------------------------
 from pathlib import Path
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
